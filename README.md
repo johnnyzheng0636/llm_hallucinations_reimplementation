@@ -3,6 +3,11 @@
 This is based on the paper "On Early Detection of Hallucinations in Factual Question Answering". All rights are reserved by the authors of the paper.
 
 # How to use
-python main.py
-python graph_cpu.py
+To download the repo, run: git clone https://github.com/johnnyzheng0636/llm_hallucinations_reimplementation.git
+
+To set up environment, run: source setup.sh
+
+To collect data and train the hallucination classifier, run: "python main.py"
+
+To plot graph, run: "python graph_cpu.py"
 

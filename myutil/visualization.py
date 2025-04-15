@@ -120,9 +120,9 @@ class visualization():
         attention_acc_ls = []
         attention_roc_ls = []
         result = result[list(result.keys())[0]]
-        print(result.keys())
+        # print(result.keys())
         for key in result.keys():
-            print(key)
+            # print(key)
             if 'acc' in key:
                 if 'attention' in key:
                     attention_acc_ls.append(result[key])

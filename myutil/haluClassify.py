@@ -52,7 +52,9 @@ class haluClassify():
             weight_decay=1e-2,
             batch_size = 128, # should be no larger than total number of sample
             epochs = 1000,
+            train_exist = False,
         ):
+        self.train_exist = train_exist # true => train classifier regardless if eval.csv exists
         self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
         self.cls_IG = cls_IG
         self.cls_logit = cls_logit
@@ -130,9 +132,11 @@ class haluClassify():
 
     def train_and_eval(self):
         # skip if finished
-        if self.output_eval.exists():
+            
+        if self.output_eval.exists() and not self.train_exist:
             print('Found result, skipping')
             return
+        
         all_results = {}
         # for idx, results_file in enumerate(tqdm(self.layerDataFiles)):
         hidden_data = {

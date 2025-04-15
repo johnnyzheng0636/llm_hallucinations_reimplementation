@@ -15,7 +15,7 @@ def main():
     parser.add_argument('--hidden_data_dir', type=str, default='./results', help='path to the hidden data')
     parser.add_argument('--chunk_sz', type=int, default=50, help='chunk size for the hook layer')
     parser.add_argument('--start', type=int, default=0, help='start index for dataset')
-    parser.add_argument('--end', type=int, default=50, help='end index for dataset')
+    parser.add_argument('--end', type=int, default=2500, help='end index for dataset')
 
     args = parser.parse_args()
 

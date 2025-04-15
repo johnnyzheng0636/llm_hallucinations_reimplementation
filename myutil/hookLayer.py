@@ -299,6 +299,9 @@ class hookLayer():
                                             torch_dtype=torch.bfloat16,
                                             # load_in_4bit=True,
                                             trust_remote_code=True)
+        # edit the layers parameter based on this
+        # self.model_repos and model_num_layers
+        print(model)
         forward_func = partial(self.model_forward, model=model, extra_forward_args={})
         embedder = self.get_embedder(model)
 

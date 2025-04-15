@@ -9,7 +9,7 @@ from string import Template
 import traceback
 from collections import defaultdict
 
-from selfcheckgpt.modeling_selfcheck import SelfCheckMQAG, SelfCheckBERTScore, SelfCheckNgram
+from selfcheckgpt.modeling_selfcheck import SelfCheckBERTScore, SelfCheckNgram
 from sklearn.metrics import roc_auc_score
 import statistics
 import spacy
@@ -25,14 +25,11 @@ class SelfCheckGpt():
             dataset_name="capitals", 
             data_dir="./data/",
             model_dir="./.cache/models/",
-            results_dir="./results/",
+            # results_dir="./results/",
             out_dir="./outouts/",
             trex_data_to_question_template = None,
             start=0, 
             end=2500, 
-            chunk_sz=50, 
-            ig_steps=64,
-            internal_batch_size=4,
             layer_number=-1
         ):
         
@@ -40,8 +37,6 @@ class SelfCheckGpt():
         self.selfcheck_ngram = SelfCheckNgram(n=1) # n=1 means Unigram, n=2 means Bigram, etc.
         self.self_checkgpt_temperature = 1.0
         self.selfcheckgpt_n_trials = 20
-
-        self.chunk_sz = chunk_sz 
         
         self.start = start
         self.end = end
@@ -57,10 +52,6 @@ class SelfCheckGpt():
             self.trex_data_to_question_template = trex_data_to_question_template
 
         self.device = torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
-
-        # Integrated Grads
-        self.ig_steps = ig_steps
-        self.internal_batch_size = internal_batch_size
 
         # Model
         self.model_name = model_name #"falcon-7b" #"opt-30b"
@@ -89,13 +80,11 @@ class SelfCheckGpt():
         # IO
         self.data_dir = Path(data_dir) # Where our data files are stored
         self.model_dir = Path(model_dir) # Cache for huggingface models
-        self.results_dir = Path(results_dir) / f"{self.model_name}_{self.chunk_sz}chunk_{self.dataset_name}_{self.start}-{self.end}" # Directory for storing results
-        self.outPath = Path(out_dir) / f"basline_{self.model_name}_{self.chunk_sz}chunk_{self.dataset_name}_{self.start}-{self.end}" # Directory for storing results
+        self.outPath = Path(out_dir) / f"{self.model_name}_basline_{self.dataset_name}_{self.start}-{self.end}" # Directory for storing results
         # if IO dir not exist, create it
         try:
             self.data_dir.mkdir(parents=True, exist_ok=True)
             self.model_dir.mkdir(parents=True, exist_ok=True)
-            self.results_dir.mkdir(parents=True, exist_ok=True)
             self.outPath.mkdir(parents=True, exist_ok=True)
         except  Exception as err:
             print("The name may have been used already, try anoter name.")
@@ -198,16 +187,26 @@ class SelfCheckGpt():
 
         hitemp_str_responses = []
         for i in range(0, self.selfcheckgpt_n_trials):
-            model_outputs = self.model.generate(
-                inputs, 
-                do_sample=True, 
-                temperature=self.self_checkgpt_temperature, 
-                max_new_tokens=100, 
-                return_dict_in_generate=True, 
-                output_scores=True,
-            )
-            generated_tokens_ids = model_outputs.sequences[0]
-            hitemp_str_responses.append(tokenizer.decode(generated_tokens_ids[start_pos:]).replace("\n", " ").strip())
+            current_hitemp = ''
+            # may generate meaningless empty string
+            # keep generate until a non-empty string is generated
+            while current_hitemp == '':
+                model_outputs = self.model.generate(
+                    inputs, 
+                    do_sample=True, 
+                    temperature=self.self_checkgpt_temperature, 
+                    max_new_tokens=100, 
+                    return_dict_in_generate=True, 
+                    output_scores=True,
+                )
+                generated_tokens_ids = model_outputs.sequences[0]
+                current_hitemp = tokenizer.decode(generated_tokens_ids[start_pos:]).replace(
+                    "\n", " "
+                ).replace("</s>", " ").strip()
+            hitemp_str_responses.append(current_hitemp)
+
+        for i in range(len(hitemp_str_responses)):
+            print(i, ' th sample: ', hitemp_str_responses[i])
 
         selfcheck_scores_bert_overall = []
         selfcheck_scores_bert_average = []
@@ -215,16 +214,17 @@ class SelfCheckGpt():
         
         sentences = [str_response]
         try:
-            # print(f"str_response: {str_response}")
-            # print(f"hitemp_str_responses: {hitemp_str_responses}")
             overall_bertscore = self.selfcheck_bertscore.predict(
                 sentences = sentences,                          # list of sentences
                 sampled_passages = hitemp_str_responses, # list of sampled passages
             )
             # print(f"overall_bertscore: {overall_bertscore}")
         except Exception as e:
-            print(f"Error in selfcheck_bertscore: {e}")
-            overall_bertscore = [0]
+            print('error at selfcheck_scores_bert_overall')
+            print(f"str_response: {sentences}")
+            print(f"hitemp_str_responses: {hitemp_str_responses}")
+            print(traceback.format_exc())
+            overall_bertscore = [-1]
             
         selfcheck_scores_bert_overall.append(overall_bertscore[0])
         
@@ -232,15 +232,16 @@ class SelfCheckGpt():
         sentences = [sent for sent in nlp(str_response).sents]
         sentences = [sent.text.strip() for sent in sentences if len(sent) > 3]
         try:
-            # print(f"sentences: {sentences}")
-            # print(f"hitemp_str_responses: {hitemp_str_responses}")
             all_bertscores = self.selfcheck_bertscore.predict(
                 sentences = sentences,                          # list of sentences
                 sampled_passages = hitemp_str_responses, # list of sampled passages
             )
         except Exception as e:
-            print(f"Error in selfcheck_bertscore: {e}")
-            all_bertscores = [0]
+            print('error at selfcheck_scores_bert_average')
+            print(f"sentences: {sentences}")
+            print(f"hitemp_str_responses: {hitemp_str_responses}")
+            print(traceback.format_exc())
+            all_bertscores = [-1]
         average_bertscore = statistics.mean(all_bertscores)
         selfcheck_scores_bert_average.append(average_bertscore)
         
@@ -280,6 +281,7 @@ class SelfCheckGpt():
         else:
             raise ValueError(f"Unknown dataset name {self.dataset_name}.")
 
+        error_count = 0
         for idx in tqdm(range(len(self.dataset))):
 
             question, answers = self.dataset[idx]
@@ -292,8 +294,9 @@ class SelfCheckGpt():
                 )
             # print('selfcheck_scores_bert_overall', selfcheck_scores_bert_overall)
             # print('selfcheck_scores_bert_average', selfcheck_scores_bert_average)
-            if selfcheck_scores_bert_overall[0] == 0 or selfcheck_scores_bert_overall[0] == 0:
+            if selfcheck_scores_bert_overall[0] == -1 or selfcheck_scores_bert_overall[0] == -1:
                 # print(f"selfcheckgpt bugs out, skipping this example")
+                error_count += 1
                 continue
 
             selfcheck_dict['question'].append(question)
@@ -313,19 +316,28 @@ class SelfCheckGpt():
             
         #print(selfcheck_arr_overall)
         #print(correct_arr)
+        baseline_results = {}
         roc_score = roc_auc_score(correct_arr, selfcheck_arr_overall)
         print(f"AUROC for self check overall: {roc_score}")
+        baseline_results['selfcheck_overall'] = roc_score
 
         #print(selfcheck_arr_average)
         #print(correct_arr)
         roc_score = roc_auc_score(correct_arr, selfcheck_arr_average)
         print(f"AUROC for self check average: {roc_score}")
+        baseline_results['selfcheck_average'] = roc_score
 
         roc_score = roc_auc_score(correct_arr, selfcheck_ngram_average)
         print(f"AUROC for self check ngram: {roc_score}")
+        baseline_results['selfcheck_ngram'] = roc_score
+
+        df = pd.DataFrame.from_dict(baseline_results, orient="index", columns=[self.model_name])
+        csv_path = self.outPath / 'eval.csv'
+        df.to_csv(str(csv_path))
 
         tmp_path = Path(self.outPath) / f"selfcheckgpt_{self.model_name}_{self.dataset_name}.pickle"
         with open(str(tmp_path), "wb") as outfile:
                 outfile.write(pickle.dumps(selfcheck_dict))
 
         print(selfcheck_dict['hitemp_str_responses'][0])
+        print("Total error: ", error_count)

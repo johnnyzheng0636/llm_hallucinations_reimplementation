@@ -8,5 +8,5 @@
 #SBATCH --output=hook_main.out       #output file
 
 date
-python3 main.py
+python3 main.py --end 50 --start_b 2 --end_b 4 --run_baseline
 date
