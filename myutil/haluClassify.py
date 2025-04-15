@@ -12,6 +12,9 @@ import random
 from tqdm import tqdm
 import traceback
 
+# For custom classifier, notice the input and output dimension should be identical to the default model
+# For attention, one may consider pad input to a constnat length first or use linear to scale down dimension.
+
 class defaultMLP(torch.nn.Module):
     def __init__(self, input_shape):
         super().__init__()
@@ -266,7 +269,7 @@ class haluClassify():
             # all_results[results_file] = classifier_results.copy()
         except Exception as err:
             print(traceback.format_exc())
-            # print(err)
+            print("\"ValueError: Sample larger than population or is negative\" maybe due to batch size too large, reduce it use --cls_batch_size")
 
         # TODO
         # save the eval result as csv

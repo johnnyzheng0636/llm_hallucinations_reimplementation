@@ -205,8 +205,8 @@ class SelfCheckGpt():
                 ).replace("</s>", " ").strip()
             hitemp_str_responses.append(current_hitemp)
 
-        for i in range(len(hitemp_str_responses)):
-            print(i, ' th sample: ', hitemp_str_responses[i])
+        # for i in range(len(hitemp_str_responses)):
+        #     print(i, ' th sample: ', hitemp_str_responses[i])
 
         selfcheck_scores_bert_overall = []
         selfcheck_scores_bert_average = []

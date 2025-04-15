@@ -8,6 +8,19 @@ def main():
     parser = argparse.ArgumentParser()
 
     # add choices later
+    # model available:
+    # model_num_layers = {
+    #         "falcon-40b" : 60,
+    #         "falcon-7b" : 32,
+    #         "open_llama_13b" : 40,
+    #         "open_llama_7b" : 32,
+    #         "opt-6.7b" : 32,
+    #         "opt-30b" : 48,
+    #     }
+    # 
+    # please only use model < 10b due to hardware limitation
+    # To add new model, on need to hardcode new model_num_layers and self.model_repos in
+    # ./myutil/hookLayer.py
     parser.add_argument('--model', type=str, default='open_llama_7b', help='model to load; for example `open_llama_7b`.')
     parser.add_argument('--dataset', type=str, default='capitals', help='dataset to load; for example `triviaqa.`')
     # parser.add_argument('--classifier', type=str, default='mlp', help='classifier for the hallucination')

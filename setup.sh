@@ -6,5 +6,5 @@ pip install matplotlib seaborn accelerate sentencepiece evaluate einops rouge-sc
 
 pip install selfcheckgpt spacy
 python -m spacy download en_core_web_sm
-pip install zipfile
+conda install zipfile
 
