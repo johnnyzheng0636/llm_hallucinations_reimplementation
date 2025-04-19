@@ -7,6 +7,11 @@
 #SBATCH --account=mscbdt2024     # only require for multiple projects
 #SBATCH --output=hook_main.out       #output file
 
+echo "start"
 date
-python3 main.py --cls_batch_size 50 --end 50 --start_b 2 --end_b 4 --run_baseline
+python3 main.py --model open_llama_7b --dataset capitals --run_baseline
+python3 main.py --model open_llama_7b --dataset trivia_qa --run_baseline
+python3 main.py --model open_llama_7b --dataset place_of_birth --run_baseline
+python3 main.py --model open_llama_7b --dataset founders --run_baseline
 date
+echo "end"
