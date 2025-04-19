@@ -8,5 +8,5 @@
 #SBATCH --output=hook_main.out       #output file
 
 date
-python3 main.py --model "falcon-7b" -- cls_batch_size 50 --end 50 --start_b 2 --end_b 4 --run_baseline
+python3 main.py --cls_batch_size 50 --end 50 --start_b 2 --end_b 4 --run_baseline
 date

@@ -7,7 +7,7 @@ To download the repo, run: git clone https://github.com/johnnyzheng0636/llm_hall
 
 To set up environment, run: source setup.sh
 
-To collect data and train the hallucination classifier, run: "python main.py"
+To collect data and train the hallucination classifier, run: "python main.py" To run with GPU on SuperPod run "sbatch test.sbatch"
 
 To plot graph, run: "python graph_cpu.py"
 

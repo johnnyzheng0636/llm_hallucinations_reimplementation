@@ -56,7 +56,9 @@ class haluClassify():
             batch_size = 128, # should be no larger than total number of sample
             epochs = 1000,
             train_exist = False,
+            demo=False,
         ):
+        self.demo = demo
         self.train_exist = train_exist # true => train classifier regardless if eval.csv exists
         self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
         self.cls_IG = cls_IG
@@ -133,15 +135,30 @@ class haluClassify():
             torch.save(classifier_model.state_dict(), save_path)
             return roc_auc_score(y_test.cpu(), pred[:,1].cpu()), (prediction_classes.numpy()==y_test.cpu().numpy()).mean()
 
+    def demo_classifier(self, X, label, cls, save_path, dataType):
+        # load exist classifier model and print LLM input, output and hidden layers
+        # expect only one data
+        print(f'LLM {dataType}: ', X[0])
+        print('Hallucination ground truth: ', label[0])
+        # load model
+
+        # print predicted model output
+
     def train_and_eval(self):
         # skip if finished
-            
-        if self.output_eval.exists() and not self.train_exist:
-            print('Found result, skipping')
-            return
+
+        if not self.demo:
+            if self.output_eval.exists() and not self.train_exist:
+                print('Found result, skipping')
+                return
         
         all_results = {}
         # for idx, results_file in enumerate(tqdm(self.layerDataFiles)):
+        # add a llm input output for demo 
+        # results['question'].append(question)
+        # results['answers'].append(answers)
+        # results['response'].append(response)
+        # results['str_response'].append(str_response)
         hidden_data = {
                 'correct': [],
                 'attributes_first': [],
@@ -149,6 +166,10 @@ class haluClassify():
                 'start_pos': [],
                 'first_fully_connected': [],
                 'first_attention': [],
+                'question': [],
+                'answers': [],
+                'response': [],
+                'str_response': [],
         }
         for results_file in tqdm(self.layerDataFiles):
             # merge all chunk for a given hidden data
@@ -187,6 +208,14 @@ class haluClassify():
         #             del results
         #         except:
         #             pass
+        if self.demo:
+
+            # demo classifier
+            # TODO
+            # load the model
+            # self.demo_classifier(X, label, cls, save_path, dataType)
+            return
+        # train classifier
         try:
             classifier_results = {}
             # with open(results_file, "rb") as infile:

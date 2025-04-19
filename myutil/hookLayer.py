@@ -267,19 +267,6 @@ class hookLayer():
 
 
     def save_results(self):
-        # restart from failures if exist
-        existmax = 0
-        existData = list(Path(f"./{self.results_dir}").glob(f"{self.model_name}_{self.dataset_name}_start-{self.start}_end-{self.end}*.pickle"))
-        for e in existData:
-            tmpmax = int(str(e).split('_')[-3].split('-')[-1])
-            if tmpmax > existmax:
-                existmax = tmpmax + 1
-        # skip if done
-        if existmax >= self.end:
-            print(f"Already completed {self.model_name} on {self.dataset_name} from {self.start} to {self.end}. Process to classification.")
-            return self.results_dir
-        # get a subset from exsit data
-
         # Dataset
         dataset = self.load_data(self.dataset_name)
         if self.dataset_name in self.trex_data_to_question_template.keys():
@@ -302,6 +289,20 @@ class hookLayer():
         # edit the layers parameter based on this
         # self.model_repos and model_num_layers
         print(model)
+
+        # restart from failures if exist
+        existmax = 0
+        existData = list(Path(f"./{self.results_dir}").glob(f"{self.model_name}_{self.dataset_name}_start-{self.start}_end-{self.end}*.pickle"))
+        for e in existData:
+            tmpmax = int(str(e).split('_')[-3].split('-')[-1])
+            if tmpmax > existmax:
+                existmax = tmpmax + 1
+        # skip if done
+        if existmax >= self.end:
+            print(f"Already completed {self.model_name} on {self.dataset_name} from {self.start} to {self.end}. Process to classification.")
+            return self.results_dir
+        # get a subset from exsit data
+
         forward_func = partial(self.model_forward, model=model, extra_forward_args={})
         embedder = self.get_embedder(model)
 

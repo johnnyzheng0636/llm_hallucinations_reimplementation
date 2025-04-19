@@ -30,9 +30,10 @@ class SelfCheckGpt():
             trex_data_to_question_template = None,
             start=0, 
             end=2500, 
-            layer_number=-1
+            layer_number=-1,
+            demo=False,
         ):
-        
+        self.demo = demo
         self.selfcheck_bertscore = SelfCheckBERTScore(rescale_with_baseline=True)
         self.selfcheck_ngram = SelfCheckNgram(n=1) # n=1 means Unigram, n=2 means Bigram, etc.
         self.self_checkgpt_temperature = 1.0
@@ -205,8 +206,11 @@ class SelfCheckGpt():
                 ).replace("</s>", " ").strip()
             hitemp_str_responses.append(current_hitemp)
 
-        # for i in range(len(hitemp_str_responses)):
-        #     print(i, ' th sample: ', hitemp_str_responses[i])
+        if self.demo:
+            print('sentences: ', [str_response])
+            print('sampled_passages generated: ')
+            for i in range(len(hitemp_str_responses)):
+                print(i, ' th sample: ', hitemp_str_responses[i])
 
         selfcheck_scores_bert_overall = []
         selfcheck_scores_bert_average = []
