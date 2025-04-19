@@ -17,3 +17,11 @@ To collect data and train the hallucination classifier, run: "python main.py" To
 
 To plot graph, run: "python graph_cpu.py"
 
+Notice that the parameter of graph_cpu.py and main.py should be identical for the same dataset and model
+
+e.g
+
+```
+python main.py --model open_llama_7b --dataset capitals
+python graph_cpu.py --model open_llama_7b --dataset capitals
+```
