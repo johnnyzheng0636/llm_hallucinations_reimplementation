@@ -3,7 +3,13 @@
 This is based on the paper "On Early Detection of Hallucinations in Factual Question Answering". All rights are reserved by the authors of the paper.
 
 # How to use
-To download the repo, run: git clone https://github.com/johnnyzheng0636/llm_hallucinations_reimplementation.git
+To download the repo, run: "git clone https://github.com/johnnyzheng0636/llm_hallucinations_reimplementation.git"
+
+Move into the repo: "cd llm_hallucinations_reimplementation"
+
+Initialize Conda on Superpod run: "conda"
+
+If not exist, follow the instruction, else process
 
 To set up environment, run: source setup.sh
 
