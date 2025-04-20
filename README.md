@@ -13,6 +13,14 @@ If not exist, follow the instruction, else process
 
 To set up environment, run: source setup.sh
 
+Before runing any python code, please easure the correct virtual environment (venv) is activate, i.e.
+
+```
+(hallucination) user_name@host_name:$
+```
+
+If the starting `(hallucination)` is missing, run `conda activate hallucination` to activate the correct venv. If success, you will see the starting `(hallucination)`
+
 To collect data and train the hallucination classifier, run: "python main.py" To run with GPU on SuperPod run "sbatch test.sbatch"
 
 To plot graph, run: "python graph_cpu.py"
