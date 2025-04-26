@@ -9,9 +9,9 @@
 
 echo "start"
 date
-python3 main.py --model open_llama_7b --dataset capitals --run_baseline
-python3 main.py --model open_llama_7b --dataset trivia_qa --run_baseline
-python3 main.py --model open_llama_7b --dataset place_of_birth --run_baseline
-python3 main.py --model open_llama_7b --dataset founders --run_baseline
+python3 main.py --model open_llama_7b --dataset capitals --train_exist --run_baseline
+python3 main.py --model open_llama_7b --dataset trivia_qa --train_exist --run_baseline
+python3 main.py --model open_llama_7b --dataset place_of_birth --train_exist --run_baseline
+python3 main.py --model open_llama_7b --dataset founders --train_exist --run_baseline
 date
 echo "end"

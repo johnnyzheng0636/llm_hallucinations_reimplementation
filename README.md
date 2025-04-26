@@ -33,3 +33,27 @@ e.g
 python main.py --model open_llama_7b --dataset capitals
 python graph_cpu.py --model open_llama_7b --dataset capitals
 ```
+
+To rerun a model for updated code add flag `--train_exist`. This flag will bypass on skip on exist data/files/classifier detected. Notice this flag is in the new `.sbatch` by default, if you are not running the updated/pulled code for the first time for a combination of model, remove it.
+
+# output
+
+Figures and evaluation can be found in `./outouts`
+
+`./outouts/<model_name>/demo` contains the demo figure
+
+`./outouts/<model_name>/eval` contains the hallucination classifier evaluation, LLM task evaluation and heuristic wait for human evaluation
+
+`./outouts/<model_name>/fig` contains the graphs
+
+`./outouts/<model_name>/model_stat` contains the hallucination classifier model parameters
+
+# Git pull issue
+
+After modifying the test.sbatch, you can't pull directly due to conflict in git tree. You can create a new file called `local.sbatch` and copy the content of `test.sbatch` into it. Notice that `local.sbatch` is in `.gitignore`, so the change is not tracked by git, and modifying it will not cause any conflict in git tree. Now restore the `test.sbatch` to the state record in the last change in the git tree by pressing the button as follow
+
+![Find green or blue beside line number\label{git_tut_1}](./fig/git_tut_1.png)
+![Click it and found the undo like an u arrow\label{git_tut_2}](./fig/git_tut_2.png)
+![No changes(green or blue) pull now\label{git_tut_3}](./fig/git_tut_3.png)
+
+If no green or blue left, you can pull now

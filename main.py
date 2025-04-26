@@ -43,6 +43,8 @@ def main():
     parser.add_argument('--cls_epochs', type=int, default=1000, help='number of epochs for the classifier')
 
     # set to ture when using a new or custom model for classifier
+    # TODO 
+    # modify into a flag for forcely redo all 
     parser.add_argument('--train_exist', action='store_true', help='if True then must train classifier regardless if a classifier exist')
     parser.add_argument('--model_statistic', action='store_true', help='if True then only fetch model statistic')
     # set this flag to run baseline, by default it doesn't run baseline
@@ -69,6 +71,7 @@ def main():
         start=args.start, 
         end=args.end, 
         chunk_sz=args.chunk_sz,
+        train_exist=args.train_exist,
     )
     # forwardHook = hookLayer.hookLayer(model_name=args.model, dataset_name=args.dataset, start=0, end=2500, chunk_sz=50,)
     # forwardHook = hookLayer.hookLayer(model_name=args.model, dataset_name=args.dataset)
