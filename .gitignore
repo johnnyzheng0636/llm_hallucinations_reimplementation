@@ -9,3 +9,5 @@ results/
 outouts/
 /__pycache__/
 */__pycache__/
+local.sbatch
+demo.sbatch

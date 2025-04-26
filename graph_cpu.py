@@ -17,15 +17,23 @@ def main():
     parser.add_argument('--start', type=int, default=0, help='start index for dataset')
     parser.add_argument('--end', type=int, default=2500, help='end index for dataset')
 
+    # sometime mem too large >170 GB after scatter and curve done, the process is killed immediately
+    # need to print those not run yet
+    parser.add_argument('--bar_only', action='store_true', help='if True then only print accuracy and ROCAUC curve')
+
     args = parser.parse_args()
 
     # construct the path to hidden data
     input_dir = f'{args.hidden_data_dir}/{args.model}_{args.chunk_sz}chunk_{args.dataset}_{args.start}-{args.end}'
     print(f'input from to: {input_dir}')
 
-    g = visualization.visualization(input_dir)
-    g.plot_curev()
-    g.plot_scatter()
+    g = visualization.visualization(
+        input_dir, 
+        only_bar = args.bar_only,
+    )
+    if not args.bar_only:
+        g.plot_curev()
+        g.plot_scatter()
     g.plot_bar()
 
 

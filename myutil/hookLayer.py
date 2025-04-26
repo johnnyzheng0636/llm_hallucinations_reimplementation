@@ -32,8 +32,11 @@ class hookLayer():
             chunk_sz=50, 
             ig_steps=64,
             internal_batch_size=4,
-            layer_number=-1
+            layer_number=-1,
+            demo=False,
         ):
+        # if demo is True, print intermediate results
+        self.demo = demo
         print('starting')
         # Data related params
         # self.iteration = iteration
@@ -79,6 +82,9 @@ class hookLayer():
             "falcon-7b" : 32,
             "open_llama_13b" : 40,
             "open_llama_7b" : 32,
+            "Llama-3.1-8B": 32,
+            "Llama-3.2-3B": 28,
+            "Llama-3.2-1B": 16,
             "opt-6.7b" : 32,
             "opt-30b" : 48,
         }
@@ -89,6 +95,9 @@ class hookLayer():
             "falcon-7b" : ("tiiuae", f".*transformer.h.{self.coll_str}.mlp.dense_4h_to_h", f".*transformer.h.{self.coll_str}.self_attention.dense"),
             "open_llama_13b" : ("openlm-research", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
             "open_llama_7b" : ("openlm-research", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
+            "Llama-3.1-8B" : ("meta-llama", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
+            "Llama-3.2-3B" : ("meta-llama", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
+            "Llama-3.2-1B" : ("meta-llama", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
             "opt-6.7b" : ("facebook", f".*model.decoder.layers.{self.coll_str}.fc2", f".*model.decoder.layers.{self.coll_str}.self_attn.out_proj"),
             "opt-30b" : ("facebook", f".*model.decoder.layers.{self.coll_str}.fc2", f".*model.decoder.layers.{self.coll_str}.self_attn.out_proj", ),
         }
@@ -112,6 +121,12 @@ class hookLayer():
         self.attention_forward_handles = {}
         self.fully_connected_forward_handles = {}
 
+    def demo_mate_data(self):
+        # print(self.demo)
+        if self.demo:
+            print(self.results_dir)
+            return self.results_dir
+
 
     def save_fully_connected_hidden(self, layer_name, mod, inp, out):
         self.fully_connected_hidden_layers[layer_name].append(out.squeeze().detach().to(torch.float32).cpu().numpy())
@@ -124,6 +139,10 @@ class hookLayer():
     def get_stop_token(self):
         if "llama" in self.model_name:
             stop_token = 13
+        elif "Llama-3.2" in self.model_name:
+            stop_token = 128001
+        elif "Llama" in self.model_name:
+            stop_token = 128009
         elif "falcon" in self.model_name:
             stop_token = 193
         else:
@@ -194,7 +213,7 @@ class hookLayer():
 
 
     def get_start_end_layer(self, model):
-        if "llama" in self.model_name:
+        if "llama" in self.model_name.lower():
             layer_count = model.model.layers
         elif "falcon" in self.model_name:
             layer_count = model.transformer.h
@@ -245,7 +264,7 @@ class hookLayer():
             return model.transformer.word_embeddings
         elif "opt" in self.model_name:
             return model.model.decoder.embed_tokens
-        elif "llama" in self.model_name:
+        elif "llama" in self.model_name.lower():
             return model.model.embed_tokens
         else:
             raise ValueError(f"Unknown model {self.model_name}")
@@ -288,6 +307,7 @@ class hookLayer():
                                             trust_remote_code=True)
         # edit the layers parameter based on this
         # self.model_repos and model_num_layers
+        print(f"{self.model_repos[self.model_name][0]}/{self.model_name}")
         print(model)
 
         # restart from failures if exist
@@ -322,11 +342,21 @@ class hookLayer():
             self.attention_hidden_layers.clear()
 
             question, answers = dataset[idx]
+            # print(question)
+            # return
             response, str_response, logits, start_pos, correct = question_asker(question, answers, model, tokenizer)
             layer_start, layer_end = self.get_start_end_layer(model)
             first_fully_connected, final_fully_connected = self.collect_fully_connected(start_pos, layer_start, layer_end)
             first_attention, final_attention = self.collect_attention(start_pos, layer_start, layer_end)
-            attributes_first = self.get_ig(question, forward_func, tokenizer, embedder, model)
+
+            if self.dataset_name in self.trex_data_to_question_template.keys():
+                full_question = self.trex_data_to_question_template[self.dataset_name].substitute(
+                    source=question)
+            elif self.dataset_name == "trivia_qa":
+                full_question = question
+            else:
+                raise ValueError(f"Unknown dataset name {self.dataset_name}.")
+            attributes_first = self.get_ig(full_question, forward_func, tokenizer, embedder, model)
 
             results['question'].append(question)
             results['answers'].append(answers)

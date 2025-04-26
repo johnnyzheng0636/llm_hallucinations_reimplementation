@@ -63,17 +63,22 @@ class SelfCheckGpt():
             "falcon-7b" : 32,
             "open_llama_13b" : 40,
             "open_llama_7b" : 32,
+            "Llama-3.1-8B": 32,
+            "Llama-3.2-3B": 28,
+            "Llama-3.2-1B": 16,
             "opt-6.7b" : 32,
             "opt-30b" : 48,
         }
         assert self.layer_number < model_num_layers[self.model_name]
         self.coll_str = "[0-9]+" if self.layer_number==-1 else str(self.layer_number)
-        # find name for transformer llm download
         self.model_repos = {
             "falcon-40b" : ("tiiuae", f".*transformer.h.{self.coll_str}.mlp.dense_4h_to_h", f".*transformer.h.{self.coll_str}.self_attention.dense"),
             "falcon-7b" : ("tiiuae", f".*transformer.h.{self.coll_str}.mlp.dense_4h_to_h", f".*transformer.h.{self.coll_str}.self_attention.dense"),
             "open_llama_13b" : ("openlm-research", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
             "open_llama_7b" : ("openlm-research", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
+            "Llama-3.1-8B" : ("meta-llama", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
+            "Llama-3.2-3B" : ("meta-llama", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
+            "Llama-3.2-1B" : ("meta-llama", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
             "opt-6.7b" : ("facebook", f".*model.decoder.layers.{self.coll_str}.fc2", f".*model.decoder.layers.{self.coll_str}.self_attn.out_proj"),
             "opt-30b" : ("facebook", f".*model.decoder.layers.{self.coll_str}.fc2", f".*model.decoder.layers.{self.coll_str}.self_attn.out_proj", ),
         }
@@ -111,6 +116,10 @@ class SelfCheckGpt():
     def get_stop_token(self):
         if "llama" in self.model_name:
             stop_token = 13
+        elif "Llama-3.2" in self.model_name:
+            stop_token = 128001
+        elif "Llama" in self.model_name:
+            stop_token = 128001
         elif "falcon" in self.model_name:
             stop_token = 193
         else:
@@ -187,6 +196,7 @@ class SelfCheckGpt():
         start_pos = inputs.size(dim=-1)
 
         hitemp_str_responses = []
+        # print('stop token: ', tokenizer.decode(self.get_stop_token()))
         for i in range(0, self.selfcheckgpt_n_trials):
             current_hitemp = ''
             # may generate meaningless empty string
@@ -203,7 +213,7 @@ class SelfCheckGpt():
                 generated_tokens_ids = model_outputs.sequences[0]
                 current_hitemp = tokenizer.decode(generated_tokens_ids[start_pos:]).replace(
                     "\n", " "
-                ).replace("</s>", " ").strip()
+                ).replace(tokenizer.decode(self.get_stop_token()), " ").strip()
             hitemp_str_responses.append(current_hitemp)
 
         if self.demo:

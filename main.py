@@ -44,6 +44,7 @@ def main():
 
     # set to ture when using a new or custom model for classifier
     parser.add_argument('--train_exist', action='store_true', help='if True then must train classifier regardless if a classifier exist')
+    parser.add_argument('--model_statistic', action='store_true', help='if True then only fetch model statistic')
     # set this flag to run baseline, by default it doesn't run baseline
     parser.add_argument('--run_baseline', action='store_true', help='if True then run the baseline model')
 
@@ -77,17 +78,18 @@ def main():
     
     # SelfCheckGpt is very slow due to it's incontext learning, 50 data takes more than 1 hour
     # so we limit the data used with start and enc
-    my_baseline = baseline.SelfCheckGpt(
-        model_name=args.model, 
-        dataset_name=args.dataset, 
-        data_dir=args.data_dir,
-        model_dir=args.model_cache,
-        # results_dir=args.hidden_data_dir,
-        out_dir=args.out_dir,
-        start=args.start_b, 
-        end=args.end_b,
-    )
-    my_baseline.run()
+    if args.run_baseline:
+        my_baseline = baseline.SelfCheckGpt(
+            model_name=args.model, 
+            dataset_name=args.dataset, 
+            data_dir=args.data_dir,
+            model_dir=args.model_cache,
+            # results_dir=args.hidden_data_dir,
+            out_dir=args.out_dir,
+            start=args.start_b, 
+            end=args.end_b,
+        )
+        my_baseline.run()
 
     # next train the classifier based on hooke data
     # graph are separeted from this main since GPU din't accelerate ploting
@@ -104,7 +106,8 @@ def main():
         weight_decay=args.cls_weight_decay,
         batch_size=args.cls_batch_size, 
         epochs=args.cls_epochs, 
-        train_exist=args.train_exist
+        train_exist=args.train_exist,
+        model_statistic=args.model_statistic,
     )
     classify.train_and_eval()
 

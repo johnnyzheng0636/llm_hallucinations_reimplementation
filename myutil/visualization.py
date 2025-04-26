@@ -25,6 +25,7 @@ class visualization():
             layerDataPath, # path has data for training            
             out_dir = "./outouts/",
             alpha = 0.2,
+            only_bar = False,
         ):
         self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
         self.model_name = str(layerDataPath).split('/')[-1]
@@ -45,74 +46,77 @@ class visualization():
         dataChunk = list(self.layerDataFiles)
 
         # initialize useful list
-        first_attribute_entropy_ls = []
-        first_logits_entropy_ls = []
-        last_logits_entropy_ls = []
-        first_logit_ls = []
-        last_logit_ls = []
-        first_token_layer_activations_ls = []
-        final_token_layer_activations_ls = []
-        first_token_layer_attention_ls = []
-        final_token_layer_attention_ls = []
-        correct_ls = []
+        # skip those before kill due to memory
+        if not only_bar:
+            first_attribute_entropy_ls = []
+            first_logits_entropy_ls = []
+            last_logits_entropy_ls = []
+            first_logit_ls = []
+            last_logit_ls = []
+            first_token_layer_activations_ls = []
+            final_token_layer_activations_ls = []
+            first_token_layer_attention_ls = []
+            final_token_layer_attention_ls = []
+            correct_ls = []
+            
+            final_attention_ls = []
+            final_linear_ls = []
+            attr_ls = []
+
+            for i in tqdm(range(len(dataChunk))):
+                try:
+                    with open(dataChunk[i], "rb") as infile:
+                        chunk = pickle.loads(infile.read())
+
+                    num_layers = chunk['first_fully_connected'][0].shape[0]
+                    layer_pos = num_layers-2
+                    first_attribute_entropy_ls.append(np.array([sp.stats.entropy(i) for i in chunk['attributes_first']]))
+                    first_logits_entropy_ls.append(np.array([sp.stats.entropy(sp.special.softmax(i[j])) for i,j in zip(chunk['logits'], chunk['start_pos'])]))
+                    last_logits_entropy_ls.append(np.array([sp.stats.entropy(sp.special.softmax(i[-1])) for i in chunk['logits']]))
+                    # first_logit_decomp_ls.append(PCA(n_components=2).fit_transform(np.array([i[j] for i,j in zip(chunk['logits'], chunk['start_pos'])])))
+                    # last_logit_decomp_ls.append(PCA(n_components=2).fit_transform(np.array([i[-1] for i in chunk['logits']])))
+                    first_logit_ls.append(np.array([i[j] for i,j in zip(chunk['logits'], chunk['start_pos'])]))
+                    # used by tsne too
+                    last_logit_ls.append(np.array([i[-1] for i in chunk['logits']]))
+                    first_token_layer_activations_ls.append(np.array([i[layer_pos] for i in chunk['first_fully_connected']]))
+                    final_token_layer_activations_ls.append(np.array([i[layer_pos] for i in chunk['final_fully_connected']]))
+                    first_token_layer_attention_ls.append(np.array([i[layer_pos] for i in chunk['first_attention']]))
+                    final_token_layer_attention_ls.append(np.array([i[layer_pos] for i in chunk['final_attention']]))
+                    correct_ls.append(np.array(chunk['correct']))
+
+                    final_attention_ls.append(np.array([i[-1] for i in chunk['final_attention']]))
+                    final_linear_ls.append(np.array([i[-1] for i in chunk['final_fully_connected']]))
+                    for attr in chunk['attributes_first']:
+                        if len(attr)<=20:
+                            attr_ls.append(np.pad(attr, (0,20-len(attr))))
+                        elif len(attr)>20:
+                            attr_ls.append(np.array(attr[:20]))
+
+                    del chunk
+                except:
+                    print(traceback.format_exc())
+
+            self.curve_data = {
+                'first_attribute_entropy': np.concatenate(first_attribute_entropy_ls),
+                'correct': np.concatenate(correct_ls),
+                'first_logits_entropy': np.concatenate(first_logits_entropy_ls),
+                'last_logits_entropy': np.concatenate(last_logits_entropy_ls),
+                'first_logit_decomp': PCA(n_components=2).fit_transform(np.concatenate(first_logit_ls)),
+                'last_logit_decomp': PCA(n_components=2).fit_transform(np.concatenate(last_logit_ls)),
+                'first_token_layer_activations': np.concatenate(first_token_layer_activations_ls),
+                'final_token_layer_activations': np.concatenate(final_token_layer_activations_ls),
+                'first_token_layer_attention': np.concatenate(first_token_layer_attention_ls),
+                'final_token_layer_attention': np.concatenate(final_token_layer_attention_ls),
+            }
+
+            self.scatter_data = {
+                'final_attention': np.concatenate(final_attention_ls),
+                'final_linear': np.concatenate(final_linear_ls),
+                'final_softmax': sp.special.softmax(np.concatenate(last_logit_ls), axis=1),
+                'final_attr': np.vstack(attr_ls),
+            }
         
-        final_attention_ls = []
-        final_linear_ls = []
-        attr_ls = []
-
-        for i in tqdm(range(len(dataChunk))):
-            try:
-                with open(dataChunk[i], "rb") as infile:
-                    chunk = pickle.loads(infile.read())
-
-                num_layers = chunk['first_fully_connected'][0].shape[0]
-                layer_pos = num_layers-2
-                first_attribute_entropy_ls.append(np.array([sp.stats.entropy(i) for i in chunk['attributes_first']]))
-                first_logits_entropy_ls.append(np.array([sp.stats.entropy(sp.special.softmax(i[j])) for i,j in zip(chunk['logits'], chunk['start_pos'])]))
-                last_logits_entropy_ls.append(np.array([sp.stats.entropy(sp.special.softmax(i[-1])) for i in chunk['logits']]))
-                # first_logit_decomp_ls.append(PCA(n_components=2).fit_transform(np.array([i[j] for i,j in zip(chunk['logits'], chunk['start_pos'])])))
-                # last_logit_decomp_ls.append(PCA(n_components=2).fit_transform(np.array([i[-1] for i in chunk['logits']])))
-                first_logit_ls.append(np.array([i[j] for i,j in zip(chunk['logits'], chunk['start_pos'])]))
-                # used by tsne too
-                last_logit_ls.append(np.array([i[-1] for i in chunk['logits']]))
-                first_token_layer_activations_ls.append(np.array([i[layer_pos] for i in chunk['first_fully_connected']]))
-                final_token_layer_activations_ls.append(np.array([i[layer_pos] for i in chunk['final_fully_connected']]))
-                first_token_layer_attention_ls.append(np.array([i[layer_pos] for i in chunk['first_attention']]))
-                final_token_layer_attention_ls.append(np.array([i[layer_pos] for i in chunk['final_attention']]))
-                correct_ls.append(np.array(chunk['correct']))
-
-                final_attention_ls.append(np.array([i[-1] for i in chunk['final_attention']]))
-                final_linear_ls.append(np.array([i[-1] for i in chunk['final_fully_connected']]))
-                for attr in chunk['attributes_first']:
-                    if len(attr)<=20:
-                        attr_ls.append(np.pad(attr, (0,20-len(attr))))
-                    elif len(attr)>20:
-                        attr_ls.append(np.array(attr[:20]))
-
-                del chunk
-            except:
-                print(traceback.format_exc())
-
-        self.curve_data = {
-            'first_attribute_entropy': np.concatenate(first_attribute_entropy_ls),
-            'correct': np.concatenate(correct_ls),
-            'first_logits_entropy': np.concatenate(first_logits_entropy_ls),
-            'last_logits_entropy': np.concatenate(last_logits_entropy_ls),
-            'first_logit_decomp': PCA(n_components=2).fit_transform(np.concatenate(first_logit_ls)),
-            'last_logit_decomp': PCA(n_components=2).fit_transform(np.concatenate(last_logit_ls)),
-            'first_token_layer_activations': np.concatenate(first_token_layer_activations_ls),
-            'final_token_layer_activations': np.concatenate(final_token_layer_activations_ls),
-            'first_token_layer_attention': np.concatenate(first_token_layer_attention_ls),
-            'final_token_layer_attention': np.concatenate(final_token_layer_attention_ls),
-        }
-
-        self.scatter_data = {
-            'final_attention': np.concatenate(final_attention_ls),
-            'final_linear': np.concatenate(final_linear_ls),
-            'final_softmax': sp.special.softmax(np.concatenate(last_logit_ls), axis=1),
-            'final_attr': np.vstack(attr_ls),
-        }
-
+        # after kill due to memory, run anyway
         self.eval_df = pd.read_csv(self.csv_input_dir, index_col=0)
         result = self.eval_df.to_dict()
         linear_acc_ls = []
@@ -331,6 +335,7 @@ class visualization():
         plt.plot(self.attention_acc_ls, label='Attention')
         plt.legend()
         tmp_path = self.output_fig_dir / 'Accuracy.png'
+        print(tmp_path)
         plt.savefig(str(tmp_path), bbox_inches='tight')
         
         plt.clf()
@@ -343,5 +348,6 @@ class visualization():
         plt.plot(self.attention_roc_ls, label='Attention')
         plt.legend()
         tmp_path = self.output_fig_dir / 'ROCAUC.png'
+        print(tmp_path)
         plt.savefig(str(tmp_path), bbox_inches='tight')
 
