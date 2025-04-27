@@ -11,3 +11,4 @@ outouts/
 */__pycache__/
 local.sbatch
 demo.sbatch
+archive/

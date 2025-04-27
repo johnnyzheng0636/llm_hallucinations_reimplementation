@@ -355,7 +355,7 @@ class haluClassify():
         #         except:
         #             pass
         if self.demo:
-            print(hidden_data)
+            # print(hidden_data)
             token_loader = LlamaTokenizer if "llama" in self.llm_name else AutoTokenizer
             print(f'{self.model_repos[self.llm_name]}/{self.llm_name}')
             tokenizer = token_loader.from_pretrained(f'{self.model_repos[self.llm_name]}/{self.llm_name}')
@@ -380,7 +380,7 @@ class haluClassify():
             # output softmax
             # for first generation token
             # print(hidden_data['logits'][0][hidden_data['start_pos'][0]])
-            first_softmax = torch.nn.functional.softmax(torch.tensor(hidden_data['logits'][0][hidden_data['start_pos'][0]]),dim=0)
+            first_softmax = torch.nn.functional.softmax(torch.tensor(hidden_data['logits'][0][hidden_data['start_pos'][0]-1]),dim=0)
             topk_logit_idx = np.argpartition(first_softmax, -self.k)[-self.k:]
             topk_logit_idx = torch.flip(topk_logit_idx[np.argsort(first_softmax[topk_logit_idx])], dims=(0,))
             topk_logit = first_softmax[topk_logit_idx]
@@ -444,8 +444,8 @@ class haluClassify():
             print('IG prediction, is hallucination?: {}.'.format(prediction_classes==0))
 
             # logit/softmax
-            X_demo = np.expand_dims(hidden_data['logits'][0][hidden_data['start_pos'][0]], axis=0)
-            print(X_demo)
+            X_demo = np.expand_dims(hidden_data['logits'][0][hidden_data['start_pos'][0]-1], axis=0)
+            # print(X_demo)
             self.demo_classifier(X_demo, self.cls_logit, 'Softmax')
 
             # linear
@@ -478,7 +478,7 @@ class haluClassify():
             # output softmax
             # for first generation token
             # print(hidden_data['logits'][1][hidden_data['start_pos'][1]])
-            first_softmax = torch.nn.functional.softmax(torch.tensor(hidden_data['logits'][1][hidden_data['start_pos'][1]]),dim=0)
+            first_softmax = torch.nn.functional.softmax(torch.tensor(hidden_data['logits'][1][hidden_data['start_pos'][1]-1]),dim=0)
             topk_logit_idx = np.argpartition(first_softmax, -self.k)[-self.k:]
             topk_logit_idx = torch.flip(topk_logit_idx[np.argsort(first_softmax[topk_logit_idx])], dims=(0,))
             topk_logit = first_softmax[topk_logit_idx]
@@ -542,7 +542,7 @@ class haluClassify():
             print('IG prediction, is hallucination?: {}.'.format(prediction_classes==0))
 
             # logit/softmax
-            X_demo = np.expand_dims(hidden_data['logits'][1][hidden_data['start_pos'][1]], axis=0)
+            X_demo = np.expand_dims(hidden_data['logits'][1][hidden_data['start_pos'][1]-1], axis=0)
             self.demo_classifier(X_demo, self.cls_logit, 'Softmax')
 
             # linear
@@ -606,7 +606,7 @@ class haluClassify():
             # logits
             # print('logits and start_pos')
             # print(hidden_data['logits'], hidden_data['start_pos'])
-            first_logits = np.stack([sp.special.softmax(i[j]) for i,j in zip(hidden_data['logits'], hidden_data['start_pos'])])
+            first_logits = np.stack([sp.special.softmax(i[j-1]) for i,j in zip(hidden_data['logits'], hidden_data['start_pos'])])
             # print('logits')
             first_logits_roc, first_logits_acc = self.gen_classifier_roc(
                 first_logits, 

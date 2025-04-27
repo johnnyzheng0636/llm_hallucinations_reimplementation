@@ -30,7 +30,16 @@ Notice that the parameter of graph_cpu.py and main.py should be identical for th
 e.g
 
 ```
-python main.py --model open_llama_7b --dataset capitals
+python main.py --model open_llama_7b --dataset capitals 
+python graph_cpu.py --model open_llama_7b --dataset capitals
+```
+
+Notice flag should be ignored (those with out parameters)
+
+e.g
+
+```
+python main.py --model open_llama_7b --dataset capitals --train_exist --run_baseline
 python graph_cpu.py --model open_llama_7b --dataset capitals
 ```
 
