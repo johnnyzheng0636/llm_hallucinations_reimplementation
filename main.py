@@ -45,7 +45,10 @@ def main():
     # set to ture when using a new or custom model for classifier
     # TODO 
     # modify into a flag for forcely redo all 
-    parser.add_argument('--train_exist', action='store_true', help='if True then must train classifier regardless if a classifier exist')
+    parser.add_argument('--overwrite_all', action='store_true', help='if True then overwrite all saved files if exist')
+    parser.add_argument('--overwrite_data', action='store_true', help='if True then only overwrite hidden date collected by forward hook if exist')
+    parser.add_argument('--overwrite_cls', action='store_true', help='if True then only overwrite classifier if exist')
+
     parser.add_argument('--model_statistic', action='store_true', help='if True then only fetch model statistic')
     # set this flag to run baseline, by default it doesn't run baseline
     parser.add_argument('--run_baseline', action='store_true', help='if True then run the baseline model')
@@ -61,6 +64,9 @@ def main():
     else:
         print('trex found, skipping download')
 
+    overwrite_flag = False
+    if args.overwrite_all or args.overwrite_data:
+        overwrite_flag = True
     # forwardHook = hookLayer.hookLayer(model_name=args.model, dataset_name=args.dataset, start=0, end=5, chunk_sz=3,)
     forwardHook = hookLayer.hookLayer(
         model_name=args.model, 
@@ -71,7 +77,7 @@ def main():
         start=args.start, 
         end=args.end, 
         chunk_sz=args.chunk_sz,
-        train_exist=args.train_exist,
+        train_exist=overwrite_flag,
     )
     # forwardHook = hookLayer.hookLayer(model_name=args.model, dataset_name=args.dataset, start=0, end=2500, chunk_sz=50,)
     # forwardHook = hookLayer.hookLayer(model_name=args.model, dataset_name=args.dataset)
@@ -94,6 +100,9 @@ def main():
         )
         my_baseline.run()
 
+    overwrite_flag = False
+    if args.overwrite_all or args.overwrite_cls:
+        overwrite_flag = True
     # next train the classifier based on hooke data
     # graph are separeted from this main since GPU din't accelerate ploting
     # the classifier training is rather faster, for 2500 data took less than 10 minutes

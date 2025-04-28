@@ -183,29 +183,29 @@ class visualization():
         pass
 
     def plot_curev(self):
-        if not os.path.exists(self.output_fig_dir / 'ecdf_ig.png'):
-            self.entropy_graph(
-                self.curve_data['first_attribute_entropy'],
-                self.curve_data['correct'],
-                'Cumulative Distribution of Entropy of Integrated Gradients of Input Tokens',
-                'ecdf_ig.png'
-            )
+        # if not os.path.exists(self.output_fig_dir / 'ecdf_ig.png'):
+        self.entropy_graph(
+            self.curve_data['first_attribute_entropy'],
+            self.curve_data['correct'],
+            'Cumulative Distribution of Entropy of Integrated Gradients of Input Tokens',
+            'ecdf_ig.png'
+        )
 
-        if not os.path.exists(self.output_fig_dir / 'ecdf_first_tok_softmax.png'):
-            self.entropy_graph(
-                self.curve_data['first_logits_entropy'],
-                self.curve_data['correct'],
-                'Cumulative Distribution of Entropy of Softmax of first token',
-                'ecdf_first_tok_softmax.png'
-            )
+        # if not os.path.exists(self.output_fig_dir / 'ecdf_first_tok_softmax.png'):
+        self.entropy_graph(
+            self.curve_data['first_logits_entropy'],
+            self.curve_data['correct'],
+            'Cumulative Distribution of Entropy of Softmax of first token',
+            'ecdf_first_tok_softmax.png'
+        )
 
-        if not os.path.exists(self.output_fig_dir / 'ecdf_last_tok_softmax.png'):
-            self.entropy_graph(
-                self.curve_data['last_logits_entropy'],
-                self.curve_data['correct'],
-                'Cumulative Distribution of Entropy of Softmax for last token',
-                'ecdf_last_tok_softmax.png'
-            )
+        # if not os.path.exists(self.output_fig_dir / 'ecdf_last_tok_softmax.png'):
+        self.entropy_graph(
+            self.curve_data['last_logits_entropy'],
+            self.curve_data['correct'],
+            'Cumulative Distribution of Entropy of Softmax for last token',
+            'ecdf_last_tok_softmax.png'
+        )
 
         # print(len(self.curve_data['first_attribute_entropy']))
         # print(self.curve_data['first_attribute_entropy'][0].shape)
@@ -228,25 +228,25 @@ class visualization():
         
         # ensure non-negative
         
-        if not os.path.exists(self.output_fig_dir / 'ecdf_first_tok_linear.png'):
-            entropy = sp.stats.entropy(self.curve_data['first_token_layer_activations'] - self.curve_data['first_token_layer_activations'].min(axis=1, keepdims=True), axis=1)
-            self.entropy_graph(
-                entropy,
-                self.curve_data['correct'],
-                'Cumulative Distribution of Entropy of layer activations for first token origin',
-                'ecdf_first_tok_linear.png'
-            )
+        # if not os.path.exists(self.output_fig_dir / 'ecdf_first_tok_linear.png'):
+        entropy = sp.stats.entropy(self.curve_data['first_token_layer_activations'] - self.curve_data['first_token_layer_activations'].min(axis=1, keepdims=True), axis=1)
+        self.entropy_graph(
+            entropy,
+            self.curve_data['correct'],
+            'Cumulative Distribution of Entropy of layer activations for first token origin',
+            'ecdf_first_tok_linear.png'
+        )
         
         # ensure non-negative
         
-        if not os.path.exists(self.output_fig_dir / 'ecdf_first_tok_attention.png'):
-            entropy = sp.stats.entropy(self.curve_data['first_token_layer_attention'] - self.curve_data['first_token_layer_attention'].min(axis=1, keepdims=True), axis=1)
-            self.entropy_graph(
-                entropy,
-                self.curve_data['correct'],
-                'Cumulative Distribution of Entropy of layer attentions for first token origin',
-                'ecdf_first_tok_attention.png'
-            )
+        # if not os.path.exists(self.output_fig_dir / 'ecdf_first_tok_attention.png'):
+        entropy = sp.stats.entropy(self.curve_data['first_token_layer_attention'] - self.curve_data['first_token_layer_attention'].min(axis=1, keepdims=True), axis=1)
+        self.entropy_graph(
+            entropy,
+            self.curve_data['correct'],
+            'Cumulative Distribution of Entropy of layer attentions for first token origin',
+            'ecdf_first_tok_attention.png'
+        )
 
         # _, axes = plt.subplots()
 
@@ -274,100 +274,100 @@ class visualization():
         # plt.cla()
 
     def plot_scatter(self):
-        if not os.path.exists(self.output_fig_dir / 'pca_softmax_first_tok.png'):
-            self.pca_graph(
-                self.curve_data['first_logit_decomp'],
-                self.curve_data['correct'],
-                'PCA Clustering of Softmax output for first token',
-                'pca_softmax_first_tok.png'
-            )
+        # if not os.path.exists(self.output_fig_dir / 'pca_softmax_first_tok.png'):
+        self.pca_graph(
+            self.curve_data['first_logit_decomp'],
+            self.curve_data['correct'],
+            'PCA Clustering of Softmax output for first token',
+            'pca_softmax_first_tok.png'
+        )
 
-        if not os.path.exists(self.output_fig_dir / 'pca_softmax_last_tok.png'):
-            self.pca_graph(
-                self.curve_data['last_logit_decomp'],
-                self.curve_data['correct'],
-                'PCA Clustering of Softmax output for last token',
-                'pca_softmax_last_tok.png'
-            )
+        # if not os.path.exists(self.output_fig_dir / 'pca_softmax_last_tok.png'):
+        self.pca_graph(
+            self.curve_data['last_logit_decomp'],
+            self.curve_data['correct'],
+            'PCA Clustering of Softmax output for last token',
+            'pca_softmax_last_tok.png'
+        )
 
-        if not os.path.exists(self.output_fig_dir / 'pca_linear_first_tok.png'):
-            self.pca_graph(
-                self.curve_data['first_token_layer_activations'],
-                self.curve_data['correct'],
-                'PCA Clustering of Final Linear for First Token',
-                'pca_linear_first_tok.png'
-            )
+        # if not os.path.exists(self.output_fig_dir / 'pca_linear_first_tok.png'):
+        self.pca_graph(
+            self.curve_data['first_token_layer_activations'],
+            self.curve_data['correct'],
+            'PCA Clustering of Final Linear for First Token',
+            'pca_linear_first_tok.png'
+        )
 
-        if not os.path.exists(self.output_fig_dir / 'pca_linear_last_tok.png'):
-            self.pca_graph(
-                self.curve_data['final_token_layer_activations'],
-                self.curve_data['correct'],
-                'PCA Clustering of Final Linear for last token',
-                'pca_linear_last_tok.png'
-            )
+        # if not os.path.exists(self.output_fig_dir / 'pca_linear_last_tok.png'):
+        self.pca_graph(
+            self.curve_data['final_token_layer_activations'],
+            self.curve_data['correct'],
+            'PCA Clustering of Final Linear for last token',
+            'pca_linear_last_tok.png'
+        )
 
-        if not os.path.exists(self.output_fig_dir / 'tsne_linear_last_tok.png'):
-            self.tsne_graph(
-                self.scatter_data['final_linear'],
-                self.curve_data['correct'],
-                'TSNE clustring of Final Linear for Last Token',
-                'tsne_linear_last_tok.png',
-            )
+        # if not os.path.exists(self.output_fig_dir / 'tsne_linear_last_tok.png'):
+        self.tsne_graph(
+            self.scatter_data['final_linear'],
+            self.curve_data['correct'],
+            'TSNE clustring of Final Linear for Last Token',
+            'tsne_linear_last_tok.png',
+        )
 
-        if not os.path.exists(self.output_fig_dir / 'tsne_IG.png'):
-            self.tsne_graph(
-                self.scatter_data['final_attr'],
-                self.curve_data['correct'],
-                'TSNE clustring of IG for Last Token',
-                'tsne_IG.png',
-            )
+        # if not os.path.exists(self.output_fig_dir / 'tsne_IG.png'):
+        self.tsne_graph(
+            self.scatter_data['final_attr'],
+            self.curve_data['correct'],
+            'TSNE clustring of IG for Last Token',
+            'tsne_IG.png',
+        )
 
-        if not os.path.exists(self.output_fig_dir / 'tsne_softmax_last_tok.png'):
-            self.tsne_graph(
-                self.scatter_data['final_softmax'],
-                self.curve_data['correct'],
-                'TSNE clustring of Final Softmax for Last Token',
-                'tsne_softmax_last_tok.png',
-            )
+        # if not os.path.exists(self.output_fig_dir / 'tsne_softmax_last_tok.png'):
+        self.tsne_graph(
+            self.scatter_data['final_softmax'],
+            self.curve_data['correct'],
+            'TSNE clustring of Final Softmax for Last Token',
+            'tsne_softmax_last_tok.png',
+        )
 
-        if not os.path.exists(self.output_fig_dir / 'tsne_attention_last_tok.png'):
-            self.tsne_graph(
-                self.scatter_data['final_attention'],
-                self.curve_data['correct'],
-                'TSNE clustring of Final Attention for Last Token',
-                'tsne_attention_last_tok.png',
-            )
+        # if not os.path.exists(self.output_fig_dir / 'tsne_attention_last_tok.png'):
+        self.tsne_graph(
+            self.scatter_data['final_attention'],
+            self.curve_data['correct'],
+            'TSNE clustring of Final Attention for Last Token',
+            'tsne_attention_last_tok.png',
+        )
 
 
 
     def plot_bar(self):
         
         tmp_path = self.output_fig_dir / 'Accuracy.png'
-        if not os.path.exists(tmp_path):
-            plt.clf()
-            plt.ylim(0,1)
-            plt.title(f'Hallucination Detection Accuracy for {self.model_name}')
-            plt.xlabel('Accuracy')
-            plt.ylabel('layers')
-            plt.axhline(y=0.5, color='gray', linestyle='--', alpha=0.5, label='Baseline (random)')
-            plt.plot(self.linear_acc_ls, label='Linear')
-            plt.plot(self.attention_acc_ls, label='Attention')
-            plt.legend()
-            print(tmp_path)
-            plt.savefig(str(tmp_path), bbox_inches='tight')
+        # if not os.path.exists(tmp_path):
+        plt.clf()
+        plt.ylim(0,1)
+        plt.title(f'Hallucination Detection Accuracy for {self.model_name}')
+        plt.xlabel('Accuracy')
+        plt.ylabel('layers')
+        plt.axhline(y=0.5, color='gray', linestyle='--', alpha=0.5, label='Baseline (random)')
+        plt.plot(self.linear_acc_ls, label='Linear')
+        plt.plot(self.attention_acc_ls, label='Attention')
+        plt.legend()
+        print(tmp_path)
+        plt.savefig(str(tmp_path), bbox_inches='tight')
         
         
         tmp_path = self.output_fig_dir / 'ROCAUC.png'
-        if not os.path.exists(tmp_path):
-            plt.clf()
-            plt.ylim(0,1)
-            plt.title(f'Hallucination Detection ROCAUC for {self.model_name}')
-            plt.xlabel('ROCAUC')
-            plt.ylabel('layers')
-            plt.axhline(y=0.5, color='gray', linestyle='--', alpha=0.5, label='Baseline (random)')
-            plt.plot(self.linear_roc_ls, label='Linear')
-            plt.plot(self.attention_roc_ls, label='Attention')
-            plt.legend()
-            print(tmp_path)
-            plt.savefig(str(tmp_path), bbox_inches='tight')
+        # if not os.path.exists(tmp_path):
+        plt.clf()
+        plt.ylim(0,1)
+        plt.title(f'Hallucination Detection ROCAUC for {self.model_name}')
+        plt.xlabel('ROCAUC')
+        plt.ylabel('layers')
+        plt.axhline(y=0.5, color='gray', linestyle='--', alpha=0.5, label='Baseline (random)')
+        plt.plot(self.linear_roc_ls, label='Linear')
+        plt.plot(self.attention_roc_ls, label='Attention')
+        plt.legend()
+        print(tmp_path)
+        plt.savefig(str(tmp_path), bbox_inches='tight')
 

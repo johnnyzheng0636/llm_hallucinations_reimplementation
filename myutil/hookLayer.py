@@ -87,7 +87,7 @@ class hookLayer():
             "Llama-3.1-8B": 32,
             "Llama-3.2-3B": 28,
             "Llama-3.2-1B": 16,
-            "gemma-3-4b-it": 1,
+            "gemma-3-4b-it": 34,
             "opt-6.7b" : 32,
             "opt-30b" : 48,
         }
@@ -101,7 +101,7 @@ class hookLayer():
             "Llama-3.1-8B" : ("meta-llama", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
             "Llama-3.2-3B" : ("meta-llama", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
             "Llama-3.2-1B" : ("meta-llama", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
-            "gemma-3-4b-it" : ("google", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
+            "gemma-3-4b-it" : ("google", f".*language_model.model.layers.{self.coll_str}.mlp.up_proj", f".*language_model.model.layers.{self.coll_str}.self_attn.o_proj"),
             "opt-6.7b" : ("facebook", f".*model.decoder.layers.{self.coll_str}.fc2", f".*model.decoder.layers.{self.coll_str}.self_attn.out_proj"),
             "opt-30b" : ("facebook", f".*model.decoder.layers.{self.coll_str}.fc2", f".*model.decoder.layers.{self.coll_str}.self_attn.out_proj", ),
         }
@@ -147,6 +147,8 @@ class hookLayer():
             stop_token = 128001
         elif "Llama" in self.model_name:
             stop_token = 128009
+        if "gemma" in self.model_name:
+            stop_token = 1
         elif "falcon" in self.model_name:
             stop_token = 193
         else:
@@ -219,6 +221,8 @@ class hookLayer():
     def get_start_end_layer(self, model):
         if "llama" in self.model_name.lower():
             layer_count = model.model.layers
+        if "gemma" in self.model_name.lower():
+            layer_count = model.language_model.model.layers
         elif "falcon" in self.model_name:
             layer_count = model.transformer.h
         else:
@@ -270,6 +274,8 @@ class hookLayer():
             return model.model.decoder.embed_tokens
         elif "llama" in self.model_name.lower():
             return model.model.embed_tokens
+        elif "gemma" in self.model_name.lower():
+            return model.language_model.model.embed_tokens
         else:
             raise ValueError(f"Unknown model {self.model_name}")
 

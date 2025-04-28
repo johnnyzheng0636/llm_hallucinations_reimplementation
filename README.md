@@ -43,11 +43,13 @@ python main.py --model open_llama_7b --dataset capitals --train_exist --run_base
 python graph_cpu.py --model open_llama_7b --dataset capitals
 ```
 
-Also, to plot new figures, we need to manually delete the old figure in `./outouts`. This can't be done with code, because some model have more than 180 GB data for plotting and cause forced exit halfway due to memory limitation. To avoid this, the `graph_cpu.py` have a forced fallback for this memory problem. Hence we need an empty `./outouts/<model_name>/fig` to plot all new figures.
+~~Also, to plot new figures, we need to manually delete the old figure in `./outouts`. This can't be done with code, because some model have more than 180 GB data for plotting and cause forced exit halfway due to memory limitation. To avoid this, the `graph_cpu.py` have a forced fallback for this memory problem. Hence we need an empty `./outouts/<model_name>/fig` to plot all new figures.~~
+
+To address the job killed due to memory used up problem for `graph_cpu.py`, please manually check which part is missing and run only that part using the corresponding flag. `--bar_only` only run the Accuracy and ROCAUC curve. `--curve_only` only run the entropy curve. `scatter_only` only run on TSNE and PCA dimension reduction graph. If the problem still presist, try use GPU for ploting with `.sbatch`
 
 To run a demo of halluccination classifier. run: `python demo.py` with the same parameters as `python main.py`
 
-To rerun a model for updated code add flag `--train_exist`. This flag will bypass the default skip on exist data/files/classifier detected. Notice this flag is in the new `.sbatch` by default, if you are not running the updated/pulled code for the first time for a combination of model, remove it.
+To rerun a model for updated code add flag ~~`--train_exist`~~ `--overwrite_all`. This flag will overwrite all  data/files/classifier if exist. Notice this flag is in the new `.sbatch` by default. Without this flag, related process will be skipped if corresponding files exist. So, if you are running the code for the first time for a certain model, remove it. Similarly, if you only want to overwrite the hidden data collected by the forward hook, use only `--overwrite_data` flag, if you only want to overwrite the hallucination classifier trained, use only `--overwrite_cls` flag.
 
 # output
 
