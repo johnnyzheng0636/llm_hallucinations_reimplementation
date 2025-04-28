@@ -36,6 +36,8 @@ def main():
         g.plot_scatter()
     g.plot_bar()
 
+    print("Finished without bug, exiting")
+
 
 if __name__ == "__main__":
     main()

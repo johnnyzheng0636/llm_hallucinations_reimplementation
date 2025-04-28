@@ -87,6 +87,7 @@ class hookLayer():
             "Llama-3.1-8B": 32,
             "Llama-3.2-3B": 28,
             "Llama-3.2-1B": 16,
+            "gemma-3-4b-it": 1,
             "opt-6.7b" : 32,
             "opt-30b" : 48,
         }
@@ -100,6 +101,7 @@ class hookLayer():
             "Llama-3.1-8B" : ("meta-llama", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
             "Llama-3.2-3B" : ("meta-llama", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
             "Llama-3.2-1B" : ("meta-llama", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
+            "gemma-3-4b-it" : ("google", f".*model.layers.{self.coll_str}.mlp.up_proj", f".*model.layers.{self.coll_str}.self_attn.o_proj"),
             "opt-6.7b" : ("facebook", f".*model.decoder.layers.{self.coll_str}.fc2", f".*model.decoder.layers.{self.coll_str}.self_attn.out_proj"),
             "opt-30b" : ("facebook", f".*model.decoder.layers.{self.coll_str}.fc2", f".*model.decoder.layers.{self.coll_str}.self_attn.out_proj", ),
         }
