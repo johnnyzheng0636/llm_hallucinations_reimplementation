@@ -23,7 +23,7 @@ If the starting `(hallucination)` is missing, run `conda activate hallucination`
 
 To collect data and train the hallucination classifier, run: `python main.py`. To run with GPU on SuperPod run `sbatch test.sbatch`
 
-To plot graph, run: `python graph_cpu.py`
+To plot graph, run: `python graph_cpu.py` 
 
 Notice that the parameter of graph_cpu.py and main.py should be identical for the same dataset and model
 
@@ -43,9 +43,11 @@ python main.py --model open_llama_7b --dataset capitals --train_exist --run_base
 python graph_cpu.py --model open_llama_7b --dataset capitals
 ```
 
+Also, to plot new figures, we need to manually delete the old figure in `./outouts`. This can't be done with code, because some model have more than 180 GB data for plotting and cause forced exit halfway due to memory limitation. To avoid this, the `graph_cpu.py` have a forced fallback for this memory problem. Hence we need an empty `./outouts/<model_name>/fig` to plot all new figures.
+
 To run a demo of halluccination classifier. run: `python demo.py` with the same parameters as `python main.py`
 
-To rerun a model for updated code add flag `--train_exist`. This flag will bypass on skip on exist data/files/classifier detected. Notice this flag is in the new `.sbatch` by default, if you are not running the updated/pulled code for the first time for a combination of model, remove it.
+To rerun a model for updated code add flag `--train_exist`. This flag will bypass the default skip on exist data/files/classifier detected. Notice this flag is in the new `.sbatch` by default, if you are not running the updated/pulled code for the first time for a combination of model, remove it.
 
 # output
 
