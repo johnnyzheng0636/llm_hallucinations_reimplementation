@@ -80,6 +80,7 @@ class haluClassify():
             cls_logit=defaultMLP, 
             cls_att=defaultMLP, 
             cls_linear=defaultMLP,
+            cls_combined=deafaultCombined,
             lr=1e-4,
             weight_decay=1e-2,
             batch_size = 128, # should be no larger than total number of sample
@@ -106,6 +107,7 @@ class haluClassify():
         self.cls_logit = cls_logit
         self.cls_att = cls_att
         self.cls_linear = cls_linear
+        self.cls_combined = cls_combined
         self.device = torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
         self.lr = lr
         self.weight_decay = weight_decay
@@ -131,6 +133,7 @@ class haluClassify():
             "Llama-3.2-1B" : ("meta-llama"),
             "opt-6.7b" : ("facebook"),
             "opt-30b" : ("facebook"),
+            "gemma-3-4b-it" : ("google"),
         }
 
 
@@ -161,6 +164,7 @@ class haluClassify():
         self.output_model_logit = self.output_model_dir / f'{self.cls_logit.__name__}_logit_model.pth'
         self.output_model_att = self.output_model_dir / f'{self.cls_att.__name__}_att_model.pth'
         self.output_model_linear = self.output_model_dir / f'{self.cls_linear.__name__}_linear_model.pth'
+        self.output_model_combined = self.output_model_dir / f'{self.cls_combined.__name__}_linear_model.pth'
 
         random.seed(self.seed)
         
@@ -181,6 +185,8 @@ class haluClassify():
             return model.model.decoder.embed_tokens
         elif "llama" in self.model_name.lower():
             return model.model.embed_tokens
+        elif "gemma" in self.model_name.lower():
+            return model.language_model.model.embed_tokens
         else:
             raise ValueError(f"Unknown model {self.model_name}")
 
@@ -212,6 +218,41 @@ class haluClassify():
             torch.save(classifier_model.state_dict(), save_path)
             return roc_auc_score(y_test.cpu(), pred[:,1].cpu()), (prediction_classes.numpy()==y_test.cpu().numpy()).mean()
 
+
+    def gen_combined_classifier_roc(self, X_linear, X_softmax, X_att, label, cls, save_path):
+        print('X_linear shape: ', X_linear.shape)
+        print('X_softmax shape: ', X_softmax.shape)
+        print('X_att shape: ', X_att.shape)
+        # X = 
+        # debug
+        return
+        X_train, X_test, y_train, y_test = train_test_split(X, label.astype(int), test_size = 0.2, random_state=42)
+        # print(X_train, X_test, y_train, y_test)
+        classifier_model = cls(X_train.shape[1]).to(self.device)
+        X_train = torch.tensor(X_train).to(self.device)
+        y_train = torch.tensor(y_train).to(torch.long).to(self.device)
+        X_test = torch.tensor(X_test).to(self.device)
+        y_test = torch.tensor(y_test).to(torch.long).to(self.device)
+
+        optimizer = torch.optim.AdamW(classifier_model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+
+        for _ in range(self.epochs):
+            optimizer.zero_grad()
+            sample = torch.randperm(X_train.shape[0])[:self.batch_size]
+            pred = classifier_model(X_train[sample])
+            loss = torch.nn.functional.cross_entropy(pred, y_train[sample])
+            loss.backward()
+            optimizer.step()
+        classifier_model.eval()
+        with torch.no_grad():
+            pred = torch.nn.functional.softmax(classifier_model(X_test), dim=1)
+            prediction_classes = (pred[:,1]>0.5).type(torch.long).cpu()
+            # TODO
+            # save the model
+            torch.save(classifier_model.state_dict(), save_path)
+            return roc_auc_score(y_test.cpu(), pred[:,1].cpu()), (prediction_classes.numpy()==y_test.cpu().numpy()).mean()
+
+
     def demo_classifier(self, X, cls, cls_type):
         # print(X.shape)
         if cls_type.lower() == 'attention':
@@ -225,6 +266,38 @@ class haluClassify():
         cls = cls(X.shape[1]).to(self.device)
         cls.load_state_dict(torch.load(load_path, map_location=self.device, weights_only=True))
         cls.eval()
+        X = torch.tensor(X).to(self.device)
+
+        with torch.no_grad():
+            start_time = time.time()
+            pred = cls(X)
+            # print('pred raw shape', pred.shape)
+            # print('pred raw first', pred[0])
+            pred = torch.nn.functional.softmax(pred,dim=1)
+            # print('pred prob', pred)
+            # print('pred prob first', pred[0])
+            # 0=hallucination, 1= not hallucination
+            prediction_classes = torch.argmax((pred[0]>0.5).type(torch.long).cpu(),dim=0)
+            end_time = time.time()
+        print('{} hallucination classifier overhead: {}s'.format(cls_type, end_time - start_time))
+        print('{} prediction, is hallucination?: {}.'.format(cls_type, prediction_classes==0))
+
+
+    def demo_combined_classifier(self, X_linear, X_att, X_softmax, seq, cls, cls_type):
+        # print(X.shape)
+        if cls_type.lower() == 'combined':
+            load_path = self.output_model_combined
+        else:
+            print('Combined classifier not found, run main.py to train one')
+            return
+        
+        # print(load_path)
+        # print(cls_type)
+        cls = cls(X_linear.shape[1], X_att.shape[1], X_softmax.shape[1], seq).to(self.device)
+        cls.load_state_dict(torch.load(load_path, map_location=self.device, weights_only=True))
+        cls.eval()
+        # TODO
+        # combined three into one
         X = torch.tensor(X).to(self.device)
 
         with torch.no_grad():
@@ -631,7 +704,7 @@ class haluClassify():
             # print('logits and start_pos')
             # print(hidden_data['logits'], hidden_data['start_pos'])
             first_logits = np.stack([sp.special.softmax(i[j-1]) for i,j in zip(hidden_data['logits'], hidden_data['start_pos'])])
-            # print('logits')
+            print('logits shape', first_logits.shape)
             first_logits_roc, first_logits_acc = self.gen_classifier_roc(
                 first_logits, 
                 label, 
@@ -642,13 +715,13 @@ class haluClassify():
             classifier_results['first_logits_acc'] = first_logits_acc
 
             # fully connected
-            # print('linear')
+            print('linear')
             for layer in range(hidden_data['first_fully_connected'][0].shape[0]):
-                # print('='*50)
-                # print('layer: ', layer)
-                # print(len(hidden_data['first_fully_connected']))
-                # print(hidden_data['first_fully_connected'][0].shape)
-                # print(hidden_data['first_fully_connected'])
+                print('='*50)
+                print('layer: ', layer)
+                print(len(hidden_data['first_fully_connected']))
+                print(hidden_data['first_fully_connected'][0].shape)
+                print(hidden_data['first_fully_connected'])
                 layer_roc, layer_acc = self.gen_classifier_roc(
                     np.stack([i[layer] for i in hidden_data['first_fully_connected']]),
                     label,
@@ -659,13 +732,13 @@ class haluClassify():
                 classifier_results[f'first_fully_connected_acc_{layer}'] = layer_acc
 
             # attention
-            # print('attention')
+            print('attention')
             for layer in range(hidden_data['first_attention'][0].shape[0]):
-                # print('='*50)
-                # print('layer: ', layer)
-                # print(len(hidden_data['first_attention']))
-                # print(hidden_data['first_attention'][0].shape)
-                # print(hidden_data['first_attention'])
+                print('='*50)
+                print('layer: ', layer)
+                print(len(hidden_data['first_attention']))
+                print(hidden_data['first_attention'][0].shape)
+                print(hidden_data['first_attention'])
                 layer_roc, layer_acc = self.gen_classifier_roc(
                     np.stack([i[layer] for i in hidden_data['first_attention']]),
                     label,
