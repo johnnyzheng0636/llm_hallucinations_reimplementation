@@ -63,13 +63,13 @@ class deafaultCombined(torch.nn.Module):
         self.mlp = torch.nn.Linear(8, 2)
     def forward(self, x, seq):
         linear_logits = self.linear_relu_stack(x)
-        print('linear_logits shape: ', linear_logits.size())
+        # print('linear_logits shape: ', linear_logits.size())
         gru_out, _ = self.gru(seq)
-        print('gru_out shape: ', gru_out.size())
+        # print('gru_out shape: ', gru_out.size())
         gru_logits = self.gru_linear(gru_out)
-        print('gru_logits shape: ', gru_logits.size())
+        # print('gru_logits shape: ', gru_logits.size())
         gru_logits = gru_logits[:, -1, :]
-        print('gru_logits shape: ', gru_logits.size())
+        # print('gru_logits shape: ', gru_logits.size())
         logit = torch.cat((linear_logits, gru_logits), dim=1)
         final_x = self.mlp(logit)
         return final_x
@@ -206,7 +206,7 @@ class haluClassify():
 
         optimizer = torch.optim.AdamW(classifier_model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
-        for _ in range(self.epochs):
+        for _ in tqdm(range(self.epochs)):
             optimizer.zero_grad()
             sample = torch.randperm(X_train.shape[0])[:self.batch_size]
             # print(sample)
@@ -279,7 +279,7 @@ class haluClassify():
 
         optimizer = torch.optim.AdamW(classifier_model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
-        for _ in range(self.epochs):
+        for _ in tqdm(range(self.epochs)):
             optimizer.zero_grad()
             sample = torch.randperm(X_mat_train.shape[0])[:self.batch_size]
             pred = classifier_model(X_mat_train[sample], X_rnn_train[sample])
@@ -334,26 +334,58 @@ class haluClassify():
         print('{} prediction, is hallucination?: {}.'.format(cls_type, prediction_classes==0))
 
 
-    def demo_combined_classifier(self, X_linear, X_att, X_softmax, X_ig, cls, cls_type):
-        # print(X.shape)
-        if cls_type.lower() == 'combined':
-            load_path = self.output_model_combined
-        else:
-            print('Combined classifier not found, run main.py to train one')
-            return
+    def demo_combined_classifier(self, X_linear, X_softmax, X_att, X_ig, cls):
+        load_path = self.output_model_combined
+
+        # print('='*50)
+        # print('X_linear len: ', len(X_linear))
+        # print('X_linear shape: ', X_linear.shape)
+        # print('X_softmax shape: ', X_softmax.shape)
+        # print('X_att len: ', len(X_att))
+        # print('X_att shape: ', X_att.shape)
+        # print('X_ig len: ', len(X_ig))
+        # print('X_ig shape: ', X_ig.shape)
+        # shape(the same data number, sum of wide of three data)
+        # only use the last layer of att and linear
+        last_layer_first_att = X_att[-1]
+        # print('transformed att shape: ', last_layer_first_att.shape)
+        last_layer_first_linear = X_linear[-1]
+        # print('transformed att shape: ', last_layer_first_linear.shape)
+        last_layer_first_softmax = X_softmax[-1]
+        # print('transformed softmax shape: ', last_layer_first_softmax.shape)
+        X = np.concatenate((last_layer_first_softmax, last_layer_first_att, last_layer_first_linear), axis=0)
+        # X = np.concatenate((X_softmax, last_layer_first_att, last_layer_first_linear), axis=1)
+        # print('final X shape: ', X.shape)
+        # print('final X data size: ', X.shape[0])
+        # print('dummy index: ', np.arange(X.shape[0]))
+
+
+        # last_layer_first_att = np.stack([i[-1] for i in X_att])
+        # last_layer_first_linear = np.stack([i[-1] for i in X_linear])
+        # X = np.concatenate((X_softmax, last_layer_first_att, last_layer_first_linear), axis=1)
         
+        # print('X. shape: ', X.shape)
+
         # print(load_path)
         # print(cls_type)
-        cls = cls(X_linear.shape[1], X_att.shape[1], X_softmax.shape[1], X_ig).to(self.device)
+        cls = cls(X.shape[0]).to(self.device)
         cls.load_state_dict(torch.load(load_path, map_location=self.device, weights_only=True))
         cls.eval()
         # TODO
         # combined three into one
-        X = torch.tensor(X).to(self.device)
+        X_mat_train = torch.tensor(X).to(torch.float).view(1, -1).to(self.device)
+        # print('X_mat_train shape: ', X_mat_train.size())
+
+        # print('X_ig: ', X_ig)
+
+        X_rnn_train = torch.tensor(X).view(1, -1, 1)
+
+        # print('X_rnn_train: ', X_rnn_train)
+        # X = torch.tensor(X).to(self.device)
 
         with torch.no_grad():
             start_time = time.time()
-            pred = cls(X)
+            pred = cls(X_mat_train, X_rnn_train)
             # print('pred raw shape', pred.shape)
             # print('pred raw first', pred[0])
             pred = torch.nn.functional.softmax(pred,dim=1)
@@ -362,8 +394,8 @@ class haluClassify():
             # 0=hallucination, 1= not hallucination
             prediction_classes = torch.argmax((pred[-1]>0.5).type(torch.long).cpu(),dim=0)
             end_time = time.time()
-        print('{} hallucination classifier overhead: {}s'.format(cls_type, end_time - start_time))
-        print('{} prediction, is hallucination?: {}.'.format(cls_type, prediction_classes==0))
+        print('{} hallucination classifier overhead: {}s'.format('Combined', end_time - start_time))
+        print('{} prediction, is hallucination?: {}.'.format('Combined', prediction_classes==0))
 
     # TODO add these two and  add a switch for only doing them and forcely redo all 
     def model_task_accuracy(
@@ -603,6 +635,13 @@ class haluClassify():
             # attention
             X_demo = hidden_data['first_attention'][0]
             self.demo_classifier(X_demo, self.cls_logit, 'attention')
+
+            # combined
+            X_linear = hidden_data['first_fully_connected'][0]
+            X_softmax = np.expand_dims(hidden_data['logits'][0][hidden_data['start_pos'][0]-1], axis=0)
+            X_att = hidden_data['first_attention'][0]
+            X_ig = hidden_data['attributes_first'][0]
+            self.demo_combined_classifier(X_linear, X_softmax, X_att, X_ig, self.cls_combined)
             print('='*50)
             print('\n\n')
 
@@ -702,6 +741,13 @@ class haluClassify():
             X_demo = hidden_data['first_attention'][1]
             # print('att shape', X_demo.shape)
             self.demo_classifier(X_demo, self.cls_logit, 'attention')
+
+            # combined
+            X_linear = hidden_data['first_fully_connected'][1]
+            X_softmax = np.expand_dims(hidden_data['logits'][1][hidden_data['start_pos'][1]-1], axis=0)
+            X_att = hidden_data['first_attention'][1]
+            X_ig = hidden_data['attributes_first'][1]
+            self.demo_combined_classifier(X_linear, X_softmax, X_att, X_ig, self.cls_combined)
             print('='*50)
             
             return
@@ -731,7 +777,8 @@ class haluClassify():
             # print(X_train, X_test, y_train, y_test)
             rnn_model = self.cls_IG()
             optimizer = torch.optim.AdamW(rnn_model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
-            for _ in range(self.epochs):
+            print('training IG classifier')
+            for _ in tqdm(range(self.epochs)):
                 # print(X_train)
                 # print(len(X_train))
                 if self.batch_size > len(X_train):
@@ -777,6 +824,7 @@ class haluClassify():
                 # print(len(hidden_data['first_fully_connected']))
                 # print(hidden_data['first_fully_connected'][0].shape)
                 # print(hidden_data['first_fully_connected'])
+                print(f'training {layer} th linear classifier')
                 layer_roc, layer_acc = self.gen_classifier_roc(
                     np.stack([i[layer] for i in hidden_data['first_fully_connected']]),
                     label,
