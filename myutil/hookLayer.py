@@ -147,7 +147,7 @@ class hookLayer():
             stop_token = 128001
         elif "Llama" in self.model_name:
             stop_token = 128009
-        if "gemma" in self.model_name:
+        elif "gemma" in self.model_name:
             stop_token = 1
         elif "falcon" in self.model_name:
             stop_token = 193
@@ -221,7 +221,7 @@ class hookLayer():
     def get_start_end_layer(self, model):
         if "llama" in self.model_name.lower():
             layer_count = model.model.layers
-        if "gemma" in self.model_name.lower():
+        elif "gemma" in self.model_name.lower():
             layer_count = model.language_model.model.layers
         elif "falcon" in self.model_name:
             layer_count = model.transformer.h

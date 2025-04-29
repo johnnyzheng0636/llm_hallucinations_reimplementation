@@ -122,7 +122,7 @@ class SelfCheckGpt():
             stop_token = 128001
         elif "Llama" in self.model_name:
             stop_token = 128001
-        if "gemma" in self.model_name:
+        elif "gemma" in self.model_name:
             stop_token = 1
         elif "falcon" in self.model_name:
             stop_token = 193
