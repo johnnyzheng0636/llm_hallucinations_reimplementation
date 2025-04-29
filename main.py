@@ -118,7 +118,7 @@ def main():
         weight_decay=args.cls_weight_decay,
         batch_size=args.cls_batch_size, 
         epochs=args.cls_epochs, 
-        train_exist=args.overwrite_flag,
+        train_exist=overwrite_flag,
         model_statistic=args.model_statistic,
     )
     classify.train_and_eval()
