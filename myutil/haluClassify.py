@@ -95,18 +95,21 @@ class haluClassify():
             dataset = "capitals", # only used for demo
             seed = 42,
             model_statistic=False,
-            llm_name="open_llama_7b",
+            # llm_name="open_llama_7b",
             k=10,
+            start=0,
+            end=2500,
+            llm_model_name='open_llama_7b',
+            hidden_data_dir="./results/",
         ):
         self.k = k
-        self.llm_name = llm_name
+        self.llm_name = llm_model_name
         self.model_statistic = model_statistic # only get mode statistic if true(task performance and heuristic accuracy)
         self.dataset = dataset
         self.seed = seed
         self.chunk_sz = chunk_sz
         self.demo = demo
         self.train_exist = train_exist # true => train classifier regardless if eval.csv exists
-        self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
         self.cls_IG = cls_IG
         self.cls_logit = cls_logit
         self.cls_att = cls_att
@@ -117,6 +120,29 @@ class haluClassify():
         self.weight_decay = weight_decay
         self.batch_size = batch_size
         self.epochs = epochs
+        self.llm_model_name = llm_model_name
+        self.start = start
+        self.end = end
+        self.hidden_data_dir = hidden_data_dir
+
+        if self.dataset != 'combined':
+            self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
+        elif self.dataset == 'combined':
+            try:
+                layerDataPath = Path(hidden_data_dir) / f"{llm_model_name}_{self.chunk_sz}chunk_capitals_{start}-{end}" # Directory for storing results
+                self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
+                layerDataPath = Path(hidden_data_dir) / f"{llm_model_name}_{self.chunk_sz}chunk_trivia_qa_{start}-{end}" # Directory for storing results
+                self.layerDataFiles.extend(list(Path(layerDataPath).glob("*.pickle")))
+                layerDataPath = Path(hidden_data_dir) / f"{llm_model_name}_{self.chunk_sz}chunk_place_of_birth_{start}-{end}" # Directory for storing results
+                self.layerDataFiles.extend(list(Path(layerDataPath).glob("*.pickle")))
+                layerDataPath = Path(hidden_data_dir) / f"{llm_model_name}_{self.chunk_sz}chunk_founders_{start}-{end}" # Directory for storing results
+                self.layerDataFiles.extend(list(Path(layerDataPath).glob("*.pickle")))
+            except:
+                print('dataset hidden data not hooked, run all four dataset first')
+                print(traceback.format_exc())
+        else:
+            print('Invalid dataset')
+            return None
 
         self.cache_model_dir = Path(cache_model_dir) # Cache for huggingface models
 
@@ -142,7 +168,10 @@ class haluClassify():
 
 
         # create output directory
-        self.model_name = str(layerDataPath).split('/')[-1]
+        if self.dataset != 'combined':
+            self.model_name = str(layerDataPath).split('/')[-1]
+        elif self.dataset == 'combined':
+            self.model_name = f"{llm_model_name}_{self.chunk_sz}chunk_{self.dataset}_{start}-{end}" # Directory for storing results
         self.outPath = Path(out_dir) / self.model_name
         
         # print(self.outPath)
@@ -245,7 +274,7 @@ class haluClassify():
         # print('final X data size: ', X.shape[0])
         # print('dummy index: ', np.arange(X.shape[0]))
         X_train_idx, X_test_idx, y_train, y_test = train_test_split(np.arange(X.shape[0]), label.astype(int), test_size = 0.2, random_state=42)
-        print(X_train_idx, X_test_idx, y_train, y_test)
+        # print(X_train_idx, X_test_idx, y_train, y_test)
 
         # X_ig = torch.nn.utils.rnn.pad_sequence(X_ig, batch_first=True)
         # print('X_ig shape: ', X_ig.size())
@@ -467,16 +496,29 @@ class haluClassify():
                 'str_response': [],
         }
         print('Loading hidden data')
+        # print('self demo ', self.demo)
+        # print('self dataset ', self.dataset)
+        # print('self.layerDataFiles', self.layerDataFiles)
         
         # print('classifier demo mode 1: ', self.demo)
         # print('datadir: ', self.layerDataFiles)
         for results_file in tqdm(self.layerDataFiles):
             # print('classifier demo mode 3: ', self.demo)
             # merge all chunk for a given hidden data
+            print(self.demo)
             try:
                 # print('classifier demo mode 2: ', self.demo)
                 if self.demo:
                     # select a random sample for demo
+                    print(self.dataset)
+                    if self.dataset == 'combined':
+                        dataset_ls = ['trivia_qa', 'place_of_birth', 'founders', 'capitals']
+                        dataset_selected = random.choice(dataset_ls)
+                        layerDataPath = Path(self.hidden_data_dir) / f"{self.llm_model_name}_{self.chunk_sz}chunk_{dataset_selected}_{self.start}-{self.end}" # Directory for storing results
+                        self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
+                        self.dataset = dataset_selected
+                        
+                    print(self.dataset)
                     print("Using demo mode")
                     rand_chunk = random.choice(self.layerDataFiles)
                     rand_idx = random.randint(0, self.chunk_sz-1)
@@ -760,13 +802,14 @@ class haluClassify():
             label = np.array(hidden_data['correct'])
 
             Task_acc_path = self.output_eval_dir / 'Task_accuracy.csv'
-            self.model_task_accuracy(Task_acc_path, label)
-            self.heuristic_accuracy(
-                hidden_data['question'][:100],
-                hidden_data['answers'][:100],
-                hidden_data['correct'][:100],
-                hidden_data['str_response'][:100],
-            )
+            if self.dataset != 'combined':
+                self.model_task_accuracy(Task_acc_path, label)
+                self.heuristic_accuracy(
+                    hidden_data['question'][:100],
+                    hidden_data['answers'][:100],
+                    hidden_data['correct'][:100],
+                    hidden_data['str_response'][:100],
+                )
             # return #for debug
     
             # attributes
@@ -833,6 +876,7 @@ class haluClassify():
                 )
                 classifier_results[f'first_fully_connected_roc_{layer}'] = layer_roc
                 classifier_results[f'first_fully_connected_acc_{layer}'] = layer_acc
+                print('='*50)
 
             # attention
             print('attention')
@@ -844,6 +888,7 @@ class haluClassify():
                 # print(len(hidden_data['first_attention']))
                 # print(hidden_data['first_attention'][0].shape)
                 # print(hidden_data['first_attention'])
+                print(f'training {layer} th attention classifier')
                 layer_roc, layer_acc = self.gen_classifier_roc(
                     np.stack([i[layer] for i in hidden_data['first_attention']]),
                     label,
@@ -852,6 +897,7 @@ class haluClassify():
                 )
                 classifier_results[f'first_attention_roc_{layer}'] = layer_roc
                 classifier_results[f'first_attention_acc_{layer}'] = layer_acc
+                print('='*50)
 
             # combined
             combined_roc, combined_acc = self.gen_combined_classifier_roc(

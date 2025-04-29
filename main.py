@@ -64,41 +64,43 @@ def main():
     else:
         print('trex found, skipping download')
 
-    overwrite_flag = False
-    if args.overwrite_all or args.overwrite_data:
-        overwrite_flag = True
-    # forwardHook = hookLayer.hookLayer(model_name=args.model, dataset_name=args.dataset, start=0, end=5, chunk_sz=3,)
-    forwardHook = hookLayer.hookLayer(
-        model_name=args.model, 
-        dataset_name=args.dataset, 
-        data_dir=args.data_dir,
-        model_dir=args.model_cache,
-        results_dir=args.hidden_data_dir,
-        start=args.start, 
-        end=args.end, 
-        chunk_sz=args.chunk_sz,
-        train_exist=overwrite_flag,
-    )
-    # forwardHook = hookLayer.hookLayer(model_name=args.model, dataset_name=args.dataset, start=0, end=2500, chunk_sz=50,)
-    # forwardHook = hookLayer.hookLayer(model_name=args.model, dataset_name=args.dataset)
-    # Using hook to collect hidden layer data is slow, takes more than 1 hour for 2500 data
-    layerDataPath = forwardHook.save_results()
-
-    
-    # SelfCheckGpt is very slow due to it's incontext learning, 50 data takes more than 1 hour
-    # so we limit the data used with start and enc
-    if args.run_baseline:
-        my_baseline = baseline.SelfCheckGpt(
+    layerDataPath = "combined"
+    if args.dataset != "combined":
+        overwrite_flag = False
+        if args.overwrite_all or args.overwrite_data:
+            overwrite_flag = True
+        # forwardHook = hookLayer.hookLayer(model_name=args.model, dataset_name=args.dataset, start=0, end=5, chunk_sz=3,)
+        forwardHook = hookLayer.hookLayer(
             model_name=args.model, 
             dataset_name=args.dataset, 
             data_dir=args.data_dir,
             model_dir=args.model_cache,
-            # results_dir=args.hidden_data_dir,
-            out_dir=args.out_dir,
-            start=args.start_b, 
-            end=args.end_b,
+            results_dir=args.hidden_data_dir,
+            start=args.start, 
+            end=args.end, 
+            chunk_sz=args.chunk_sz,
+            train_exist=overwrite_flag,
         )
-        my_baseline.run()
+        # forwardHook = hookLayer.hookLayer(model_name=args.model, dataset_name=args.dataset, start=0, end=2500, chunk_sz=50,)
+        # forwardHook = hookLayer.hookLayer(model_name=args.model, dataset_name=args.dataset)
+        # Using hook to collect hidden layer data is slow, takes more than 1 hour for 2500 data
+        layerDataPath = forwardHook.save_results()
+
+        
+        # SelfCheckGpt is very slow due to it's incontext learning, 50 data takes more than 1 hour
+        # so we limit the data used with start and enc
+        if args.run_baseline:
+            my_baseline = baseline.SelfCheckGpt(
+                model_name=args.model, 
+                dataset_name=args.dataset, 
+                data_dir=args.data_dir,
+                model_dir=args.model_cache,
+                # results_dir=args.hidden_data_dir,
+                out_dir=args.out_dir,
+                start=args.start_b, 
+                end=args.end_b,
+            )
+            my_baseline.run()
 
     overwrite_flag = False
     if args.overwrite_all or args.overwrite_cls:
@@ -120,6 +122,11 @@ def main():
         epochs=args.cls_epochs, 
         train_exist=overwrite_flag,
         model_statistic=args.model_statistic,
+        dataset=args.dataset,
+        start=args.start,
+        end=args.end,
+        llm_model_name=args.model,
+        hidden_data_dir=args.hidden_data_dir,
     )
     classify.train_and_eval()
 

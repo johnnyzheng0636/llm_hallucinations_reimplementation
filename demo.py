@@ -81,6 +81,8 @@ def main():
     # next train the classifier based on hooke data
     # graph are separeted from this main since GPU din't accelerate ploting
     # the classifier training is rather faster, for 2500 data took less than 10 minutes
+    # TODO
+    # missing args
     classify = haluClassify.haluClassify(
         layerDataPath, 
         out_dir=args.out_dir,
@@ -97,9 +99,28 @@ def main():
         chunk_sz=args.chunk_sz,
         demo=demo,
         dataset=args.dataset,
-        llm_name=args.model,
+        # llm_name=args.model,
         seed=args.seed,
+        start=args.start,
+        end=args.end,
+        llm_model_name=args.model,
+        hidden_data_dir=args.hidden_data_dir,
     )
+
+    
+    #     lr=args.cls_lr,
+    #     weight_decay=args.cls_weight_decay,
+    #     batch_size=args.cls_batch_size, 
+    #     epochs=args.cls_epochs, 
+    #     train_exist=overwrite_flag,
+    #     model_statistic=args.model_statistic,
+    #     dataset=args.dataset,
+    #     start=args.start,
+    #     end=args.end,
+    #     llm_model_name=args.model,
+    #     hidden_data_dir=args.hidden_data_dir,
+    # )
+
     classify.train_and_eval()
 
 if __name__ == "__main__":

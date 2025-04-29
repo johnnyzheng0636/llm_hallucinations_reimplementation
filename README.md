@@ -51,6 +51,8 @@ To run a demo of halluccination classifier. run: `python demo.py` with the same 
 
 To rerun a model for updated code add flag ~~`--train_exist`~~ `--overwrite_all`. This flag will overwrite all  data/files/classifier if exist. Notice this flag is in the new `.sbatch` by default. Without this flag, related process will be skipped if corresponding files exist. So, if you are running the code for the first time for a certain model, remove it. Similarly, if you only want to overwrite the hidden data collected by the forward hook, use only `--overwrite_data` flag, if you only want to overwrite the hallucination classifier trained, use only `--overwrite_cls` flag.
 
+To train classifier on all 4 dataset, after you finished all 4 dataset, run `main.py` for the 5th time using dataset arg `--combined`
+
 # output
 
 Figures and evaluation can be found in `./outouts`

@@ -325,7 +325,7 @@ class hookLayer():
         if not self.train_exist:
             existData = list(Path(f"./{self.results_dir}").glob(f"{self.model_name}_{self.dataset_name}_start-{self.start}_end-{self.end}*.pickle"))
             for e in existData:
-                tmpmax = int(str(e).split('_')[-3].split('-')[-1])
+                tmpmax = int(str(e).split('_')[-1].split('-')[-1].split('.')[0])
                 if tmpmax > existmax:
                     existmax = tmpmax + 1
             # skip if done
@@ -386,13 +386,13 @@ class hookLayer():
 
             # chunking the pickle since one pickle is too large and give error
             if (idx+1) % self.chunk_sz == 0:
-                with open(self.results_dir/f"{self.model_name}_{self.dataset_name}_start-{self.start}_end-{self.end}_{idx+1-self.chunk_sz}-{idx}_{datetime.now().month}_{datetime.now().day}.pickle", "wb") as outfile:
+                with open(self.results_dir/f"{self.model_name}_{self.dataset_name}_start-{self.start}_end-{self.end}_{idx+1-self.chunk_sz}-{idx}.pickle", "wb") as outfile:
                     outfile.write(pickle.dumps(results))
                 results.clear()
 
         # ending chunk check
         if (len(dataset)) % self.chunk_sz != 0:
-            with open(self.results_dir/f"{self.model_name}_{self.dataset_name}_start-{self.start}_end-{self.end}_{len(dataset)-len(dataset)%self.chunk_sz}-{len(dataset)-1}_{datetime.now().month}_{datetime.now().day}.pickle", "wb") as outfile:
+            with open(self.results_dir/f"{self.model_name}_{self.dataset_name}_start-{self.start}_end-{self.end}_{len(dataset)-len(dataset)%self.chunk_sz}-{len(dataset)-1}.pickle", "wb") as outfile:
                 outfile.write(pickle.dumps(results))
 
         return self.results_dir
