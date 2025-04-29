@@ -47,10 +47,9 @@ class defaultGRU(torch.nn.Module):
         return self.linear(gru_out)[-1, -1, :]
 
 class deafaultCombined(torch.nn.Module):
-    def __init__(self, input_shape_linear, input_shape_softmax, input_shape_att):
+    def __init__(self, input_shape):
         super().__init__()
         
-        input_shape = input_shape_linear + input_shape_softmax + input_shape_att
         self.linear_relu_stack =torch.nn.Sequential(
             torch.nn.Linear(input_shape, 256),
             torch.nn.ReLU(),
@@ -61,11 +60,16 @@ class deafaultCombined(torch.nn.Module):
         num_layers = 4
         self.gru = torch.nn.GRU(1, hidden_dim, num_layers, dropout=0.25, batch_first=True, bidirectional=False)
         self.gru_linear = torch.nn.Linear(hidden_dim, 2)
-        self.mlp = torch.nn.Linear(4, 2)
+        self.mlp = torch.nn.Linear(8, 2)
     def forward(self, x, seq):
         linear_logits = self.linear_relu_stack(x)
+        print('linear_logits shape: ', linear_logits.size())
         gru_out, _ = self.gru(seq)
-        gru_logits = self.linear(gru_out)[-1, -1, :]
+        print('gru_out shape: ', gru_out.size())
+        gru_logits = self.gru_linear(gru_out)
+        print('gru_logits shape: ', gru_logits.size())
+        gru_logits = gru_logits[:, -1, :]
+        print('gru_logits shape: ', gru_logits.size())
         logit = torch.cat((linear_logits, gru_logits), dim=1)
         final_x = self.mlp(logit)
         return final_x
@@ -205,6 +209,8 @@ class haluClassify():
         for _ in range(self.epochs):
             optimizer.zero_grad()
             sample = torch.randperm(X_train.shape[0])[:self.batch_size]
+            # print(sample)
+            # print('X_train size', X_train[sample].size())
             pred = classifier_model(X_train[sample])
             loss = torch.nn.functional.cross_entropy(pred, y_train[sample])
             loss.backward()
@@ -220,54 +226,74 @@ class haluClassify():
 
 
     def gen_combined_classifier_roc(self, X_linear, X_softmax, X_att, X_ig, label, cls, save_path):
-        print('='*50)
-        print('X_linear len: ', len(X_linear))
-        print('X_linear shape: ', X_linear[0].shape)
-        print('X_softmax shape: ', X_softmax.shape)
-        print('X_att len: ', len(X_att))
-        print('X_att shape: ', X_att[0].shape)
-        print('X_ig len: ', len(X_ig))
-        print('X_ig shape: ', X_ig[0].shape)
+        # print('='*50)
+        # print('X_linear len: ', len(X_linear))
+        # print('X_linear shape: ', X_linear[0].shape)
+        # print('X_softmax shape: ', X_softmax.shape)
+        # print('X_att len: ', len(X_att))
+        # print('X_att shape: ', X_att[0].shape)
+        # print('X_ig len: ', len(X_ig))
+        # print('X_ig shape: ', X_ig[0].shape)
         # shape(the same data number, sum of wide of three data)
         # only use the last layer of att and linear
         last_layer_first_att = np.stack([i[-1] for i in X_att])
-        print('transformed att shape: ', last_layer_first_att.shape)
+        # print('transformed att shape: ', last_layer_first_att.shape)
         last_layer_first_linear = np.stack([i[-1] for i in X_linear])
-        print('transformed att shape: ', last_layer_first_linear.shape)
+        # print('transformed att shape: ', last_layer_first_linear.shape)
         X = np.concatenate((X_softmax, last_layer_first_att, last_layer_first_linear), axis=1)
-        print('final X shape: ', X.shape)
-        print('final X data size: ', X.shape[0])
-        print('dummy index: ', np.arange(X.shape[0]))
+        # print('final X shape: ', X.shape)
+        # print('final X data size: ', X.shape[0])
+        # print('dummy index: ', np.arange(X.shape[0]))
         X_train_idx, X_test_idx, y_train, y_test = train_test_split(np.arange(X.shape[0]), label.astype(int), test_size = 0.2, random_state=42)
         print(X_train_idx, X_test_idx, y_train, y_test)
 
+        # X_ig = torch.nn.utils.rnn.pad_sequence(X_ig, batch_first=True)
+        # print('X_ig shape: ', X_ig.size())
+
         X_mat_train = np.take(X, X_train_idx, axis=0)
-        X_rnn_train = np.take(X, X_train_idx, axis=0)
-        X_mat_train = np.take(X, X_test_idx, axis=0)
-        X_mat_train = np.take(X, X_test_idx, axis=0)
+        # print('X_mat_train shape: ', X_mat_train.shape)
+        X_rnn_train = [torch.tensor(X_ig[i]) for i in X_train_idx]
+        # print('X_rnn_train shape: ', len(X_rnn_train), X_rnn_train[0].shape, X_rnn_train[1].shape)
+        X_mat_test = np.take(X, X_test_idx, axis=0)
+        # print('X_mat_test shape: ', X_mat_test.shape)
+        X_rnn_test = [torch.tensor(X_ig[i]) for i in X_test_idx]
+        # print('X_rnn_test shape: ', len(X_rnn_test), X_rnn_test[0].shape, X_rnn_test[1].shape)
 
         
-        # debug
-        return
-        classifier_model = cls(X_train.shape[1]).to(self.device)
-        X_train = torch.tensor(X_train).to(self.device)
+        
+        classifier_model = cls(X_mat_train.shape[1]).to(self.device)
+
+        X_mat_train = torch.tensor(X_mat_train).to(torch.float).to(self.device)
+        X_rnn_train = torch.unsqueeze(torch.nn.utils.rnn.pad_sequence(X_rnn_train, batch_first=True),dim=2).to(torch.float).to(self.device)
         y_train = torch.tensor(y_train).to(torch.long).to(self.device)
-        X_test = torch.tensor(X_test).to(self.device)
+        X_mat_test = torch.tensor(X_mat_test).to(torch.float).to(self.device)
+        X_rnn_test = torch.unsqueeze(torch.nn.utils.rnn.pad_sequence(X_rnn_test, batch_first=True),dim=2).to(torch.float).to(self.device)
         y_test = torch.tensor(y_test).to(torch.long).to(self.device)
+
+        # print('X_mat_train shape: ', X_mat_train.size())
+        # print('X_rnn_train shape: ', X_rnn_train.size())
+        # print('y_train shape: ', y_train.size())
+        # print('X_mat_test shape: ', X_mat_test.size())
+        # print('X_rnn_test shape: ', X_rnn_test.size())
+        # print('y_test shape: ', y_test.size())
 
         optimizer = torch.optim.AdamW(classifier_model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
         for _ in range(self.epochs):
             optimizer.zero_grad()
-            sample = torch.randperm(X_train.shape[0])[:self.batch_size]
-            pred = classifier_model(X_train[sample])
+            sample = torch.randperm(X_mat_train.shape[0])[:self.batch_size]
+            pred = classifier_model(X_mat_train[sample], X_rnn_train[sample])
+            # print('pred shape: ', pred.size())
             loss = torch.nn.functional.cross_entropy(pred, y_train[sample])
             loss.backward()
             optimizer.step()
+    
         classifier_model.eval()
         with torch.no_grad():
-            pred = torch.nn.functional.softmax(classifier_model(X_test), dim=1)
+            pred = torch.nn.functional.softmax(classifier_model(X_mat_test, X_rnn_test), dim=1)
+            # print('pred size: ', pred.size())
             prediction_classes = (pred[:,1]>0.5).type(torch.long).cpu()
+            # print('pred size: ', prediction_classes.size())
             # TODO
             # save the model
             torch.save(classifier_model.state_dict(), save_path)
@@ -780,7 +806,7 @@ class haluClassify():
                 classifier_results[f'first_attention_acc_{layer}'] = layer_acc
 
             # combined
-            first_logits_roc, first_logits_acc = self.gen_combined_classifier_roc(
+            combined_roc, combined_acc = self.gen_combined_classifier_roc(
                 hidden_data['first_fully_connected'],
                 first_logits,
                 hidden_data['first_attention'],
@@ -789,6 +815,8 @@ class haluClassify():
                 self.cls_combined,
                 self.output_model_combined,                
             )
+            classifier_results['combined_roc'] = combined_roc
+            classifier_results['combined_acc'] = combined_acc
 
             # all_results[results_file] = classifier_results.copy()
             # TODO
