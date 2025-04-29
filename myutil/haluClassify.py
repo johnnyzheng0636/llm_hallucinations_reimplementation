@@ -46,6 +46,30 @@ class defaultGRU(torch.nn.Module):
         gru_out, _ = self.gru(seq)
         return self.linear(gru_out)[-1, -1, :]
 
+class deafaultCombined(torch.nn.Module):
+    def __init__(self, input_shape_linear, input_shape_softmax, input_shape_att):
+        super().__init__()
+        
+        input_shape = input_shape_linear + input_shape_softmax + input_shape_att
+        self.linear_relu_stack =torch.nn.Sequential(
+            torch.nn.Linear(input_shape, 256),
+            torch.nn.ReLU(),
+            torch.nn.Dropout(),
+            torch.nn.Linear(256, 6)
+            )
+        hidden_dim = 128
+        num_layers = 4
+        self.gru = torch.nn.GRU(1, hidden_dim, num_layers, dropout=0.25, batch_first=True, bidirectional=False)
+        self.gru_linear = torch.nn.Linear(hidden_dim, 2)
+        self.mlp = torch.nn.Linear(4, 2)
+    def forward(self, x, seq):
+        linear_logits = self.linear_relu_stack(x)
+        gru_out, _ = self.gru(seq)
+        gru_logits = self.linear(gru_out)[-1, -1, :]
+        logit = torch.cat((linear_logits, gru_logits), dim=1)
+        final_x = self.mlp(logit)
+        return final_x
+
 class haluClassify():
     def __init__(
             self, 
