@@ -123,6 +123,12 @@ class visualization():
         linear_roc_ls = []
         attention_acc_ls = []
         attention_roc_ls = []
+        self.softmax_acc = 0
+        self.softmax_roc = 0
+        self.ig_acc = 0
+        self.ig_roc = 0
+        self.combined_acc = 0
+        self.combined_roc = 0
         result = result[list(result.keys())[0]]
         # print(result.keys())
         for key in result.keys():
@@ -132,11 +138,23 @@ class visualization():
                     attention_acc_ls.append(result[key])
                 elif 'fully_connected' in key:
                     linear_acc_ls.append(result[key])
+                elif 'attribution' in key:
+                    self.ig_acc = result[key]
+                elif 'logits' in key:
+                    self.softmax_acc = result[key]
+                elif 'combined' in key:
+                    self.combined_acc = result[key]
             elif 'roc' in key:
                 if 'attention' in key:
                     attention_roc_ls.append(result[key])
                 elif 'fully_connected' in key:
                     linear_roc_ls.append(result[key])
+                elif 'attribution' in key:
+                    self.ig_roc = result[key]
+                elif 'logits' in key:
+                    self.softmax_roc = result[key]
+                elif 'combined' in key:
+                    self.combined_roc = result[key]
 
         self.linear_acc_ls = np.array(linear_acc_ls)
         self.linear_roc_ls = np.array(linear_roc_ls)
@@ -179,7 +197,7 @@ class visualization():
         plt.legend(labels=mylabels)
         plt.savefig(str(tmp_path), bbox_inches='tight')
 
-    def roc_graph(self, data, title, save_file):
+    def softmax_graph(self, data, title, save_file):
         pass
 
     def plot_curev(self):
@@ -347,9 +365,12 @@ class visualization():
         plt.clf()
         plt.ylim(0,1)
         plt.title(f'Hallucination Detection Accuracy for {self.model_name}')
-        plt.xlabel('Accuracy')
-        plt.ylabel('layers')
+        plt.ylabel('Accuracy')
+        plt.xlabel('layers')
         plt.axhline(y=0.5, color='gray', linestyle='--', alpha=0.5, label='Baseline (random)')
+        plt.axhline(y=self.softmax_acc, color='purple', linestyle='--', alpha=0.5, label='Softmax')
+        plt.axhline(y=self.ig_acc, color='pink', linestyle='--', alpha=0.5, label='Baseline (IG)')
+        plt.axhline(y=self.combined_acc, color='green', linestyle='--', alpha=0.5, label='Baseline (Combined)')
         plt.plot(self.linear_acc_ls, label='Linear')
         plt.plot(self.attention_acc_ls, label='Attention')
         plt.legend()
@@ -362,9 +383,12 @@ class visualization():
         plt.clf()
         plt.ylim(0,1)
         plt.title(f'Hallucination Detection ROCAUC for {self.model_name}')
-        plt.xlabel('ROCAUC')
-        plt.ylabel('layers')
+        plt.ylabel('ROCAUC')
+        plt.xlabel('layers')
         plt.axhline(y=0.5, color='gray', linestyle='--', alpha=0.5, label='Baseline (random)')
+        plt.axhline(y=self.softmax_roc, color='purple', linestyle='--', alpha=0.5, label='Softmax')
+        plt.axhline(y=self.ig_roc, color='pink', linestyle='--', alpha=0.5, label='Baseline (IG)')
+        plt.axhline(y=self.combined_roc, color='green', linestyle='--', alpha=0.5, label='Baseline (Combined)')
         plt.plot(self.linear_roc_ls, label='Linear')
         plt.plot(self.attention_roc_ls, label='Attention')
         plt.legend()
