@@ -96,16 +96,16 @@ class visualization():
 
 
                     
-                    print('chunk logits len and one of the shape ', len(chunk['logits']), chunk['logits'][0].shape)
-                    print('chunk logit 1 softmax axis 0 shape: ', np.sum(sp.special.softmax(chunk['logits'][0], axis=0)))
-                    print('chunk logit 1 softmax axis 1 shape: ', np.sum(sp.special.softmax(chunk['logits'][0], axis=1)))
+                    # print('chunk logits len and one of the shape ', len(chunk['logits']), chunk['logits'][0].shape)
+                    # print('chunk logit 1 softmax axis 0 shape: ', np.sum(sp.special.softmax(chunk['logits'][0], axis=0)))
+                    # print('chunk logit 1 softmax axis 1 shape: ', np.sum(sp.special.softmax(chunk['logits'][0], axis=1)))
 
                     del chunk
                 except:
                     print(traceback.format_exc())
 
             all_logit_entropy_ls = np.concatenate(all_logit_entropy_ls)
-            print('all_logit_entropy_ls.shape: ', all_logit_entropy_ls.shape)
+            # print('all_logit_entropy_ls.shape: ', all_logit_entropy_ls.shape)
 
             self.curve_data = {
                 'first_attribute_entropy': np.concatenate(first_attribute_entropy_ls),
