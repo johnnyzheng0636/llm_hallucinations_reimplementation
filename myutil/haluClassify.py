@@ -505,7 +505,7 @@ class haluClassify():
         for results_file in tqdm(self.layerDataFiles):
             # print('classifier demo mode 3: ', self.demo)
             # merge all chunk for a given hidden data
-            print(self.demo)
+            # print(self.demo)
             try:
                 # print('classifier demo mode 2: ', self.demo)
                 if self.demo:
