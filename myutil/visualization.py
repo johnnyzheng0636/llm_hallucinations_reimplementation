@@ -51,6 +51,7 @@ class visualization():
             first_attribute_entropy_ls = []
             first_logits_entropy_ls = []
             last_logits_entropy_ls = []
+            all_logit_entropy_ls = []
             first_logit_ls = []
             last_logit_ls = []
             first_token_layer_activations_ls = []
@@ -72,6 +73,7 @@ class visualization():
                     layer_pos = num_layers-2
                     first_attribute_entropy_ls.append(np.array([sp.stats.entropy(i) for i in chunk['attributes_first']]))
                     first_logits_entropy_ls.append(np.array([sp.stats.entropy(sp.special.softmax(i[j])) for i,j in zip(chunk['logits'], chunk['start_pos'])]))
+                    all_logit_entropy_ls.append(np.array([sp.stats.entropy(sp.special.softmax(i[j-1:], axis=1), axis=1) for i,j in zip(chunk['logits'], chunk['start_pos'])]))
                     last_logits_entropy_ls.append(np.array([sp.stats.entropy(sp.special.softmax(i[-1])) for i in chunk['logits']]))
                     # first_logit_decomp_ls.append(PCA(n_components=2).fit_transform(np.array([i[j] for i,j in zip(chunk['logits'], chunk['start_pos'])])))
                     # last_logit_decomp_ls.append(PCA(n_components=2).fit_transform(np.array([i[-1] for i in chunk['logits']])))
@@ -92,9 +94,18 @@ class visualization():
                         elif len(attr)>20:
                             attr_ls.append(np.array(attr[:20]))
 
+
+                    
+                    print('chunk logits len and one of the shape ', len(chunk['logits']), chunk['logits'][0].shape)
+                    print('chunk logit 1 softmax axis 0 shape: ', np.sum(sp.special.softmax(chunk['logits'][0], axis=0)))
+                    print('chunk logit 1 softmax axis 1 shape: ', np.sum(sp.special.softmax(chunk['logits'][0], axis=1)))
+
                     del chunk
                 except:
                     print(traceback.format_exc())
+
+            all_logit_entropy_ls = np.concatenate(all_logit_entropy_ls)
+            print('all_logit_entropy_ls.shape: ', all_logit_entropy_ls.shape)
 
             self.curve_data = {
                 'first_attribute_entropy': np.concatenate(first_attribute_entropy_ls),
@@ -107,6 +118,7 @@ class visualization():
                 'final_token_layer_activations': np.concatenate(final_token_layer_activations_ls),
                 'first_token_layer_attention': np.concatenate(first_token_layer_attention_ls),
                 'final_token_layer_attention': np.concatenate(final_token_layer_attention_ls),
+                'first_10_softmax_entropy': all_logit_entropy_ls,
             }
 
             self.scatter_data = {
@@ -197,10 +209,54 @@ class visualization():
         plt.legend(labels=mylabels)
         plt.savefig(str(tmp_path), bbox_inches='tight')
 
-    def softmax_graph(self, data, title, save_file):
-        pass
+    def compute_stats(self, entropy_group):
+        if entropy_group.size == 0:
+            return None, None, None
+        mean = np.mean(entropy_group, axis=0)
+        max_vals = np.max(entropy_group, axis=0)
+        min_vals = np.min(entropy_group, axis=0)
+        return mean, max_vals, min_vals
+
+    def softmax_curve(self, data, label, title, save_file):
+        label_hal = label == 0
+        label_true = label == 1
+
+        entropy_hal = data[label_hal, :]
+        entropy_true = data[label_true, :]
+
+        mean0, max0, min0 = self.compute_stats(entropy_hal)
+        mean1, max1, min1 = self.compute_stats(entropy_true)
+        
+        # plot
+        plt.figure(figsize=(10, 6))
+        steps = np.arange(data.shape[1])
+
+        if mean1 is not None:
+            plt.plot(steps, mean1, label='Not Halluciantion', color='blue')
+            plt.fill_between(steps, min1, max1, color='blue', alpha=0.2)
+
+        if mean0 is not None:
+            plt.plot(steps, mean0, label='Hallucination', color='orange')
+            plt.fill_between(steps, min0, max0, color='orange', alpha=0.2)
+
+        plt.xlabel('Generation Step')
+        plt.ylabel('Entropy')
+        plt.title(title)
+        plt.legend()
+        # plt.grid(True)
+
+        tmp_path = self.output_fig_dir / save_file
+        print(tmp_path)
+        plt.savefig(str(tmp_path), bbox_inches='tight')
 
     def plot_curev(self):
+        self.softmax_curve(
+            self.curve_data['first_10_softmax_entropy'],
+            self.curve_data['correct'],
+            'Softmax entropy at different generation steps',
+            'softmax_entropy.png'
+        )
+
         # if not os.path.exists(self.output_fig_dir / 'ecdf_ig.png'):
         self.entropy_graph(
             self.curve_data['first_attribute_entropy'],
