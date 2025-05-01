@@ -116,6 +116,7 @@ def main():
         # cls_logit=haluClassify.defaultMLP, 
         # cls_att=haluClassify.defaultMLP, 
         # cls_linear=haluClassify.defaultMLP,
+        chunk_sz=args.chunk_sz,
         lr=args.cls_lr,
         weight_decay=args.cls_weight_decay,
         batch_size=args.cls_batch_size, 

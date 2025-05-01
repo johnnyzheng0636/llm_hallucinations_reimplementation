@@ -61,7 +61,11 @@ class visualization():
 
 
         # self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
-        self.model_name = str(layerDataPath).split('/')[-1]
+        if self.dataset != 'combined':
+            self.model_name = str(layerDataPath).split('/')[-1]
+        else:
+            self.model_name = f"{self.llm_model_name}_{self.chunk_sz}chunk_combined_{self.start}-{self.end}"
+
         self.outPath = Path(out_dir) / self.model_name
         self.alpha = alpha
         

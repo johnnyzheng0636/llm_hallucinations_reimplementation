@@ -27,7 +27,9 @@ def main():
 
     # construct the path to hidden data
     input_dir = f'{args.hidden_data_dir}/{args.model}_{args.chunk_sz}chunk_{args.dataset}_{args.start}-{args.end}'
-    print(f'input from to: {input_dir}')
+    
+    if args.dataset != 'combined':
+        print(f'input from to: {input_dir}')
 
     g = visualization.visualization(
         input_dir, 

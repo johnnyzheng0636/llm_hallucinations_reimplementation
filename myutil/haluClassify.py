@@ -126,23 +126,35 @@ class haluClassify():
         self.hidden_data_dir = hidden_data_dir
 
         if self.dataset != 'combined':
+            print('normal data')
             self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
         elif self.dataset == 'combined':
+            print('combined data')
             try:
                 layerDataPath = Path(hidden_data_dir) / f"{llm_model_name}_{self.chunk_sz}chunk_capitals_{start}-{end}" # Directory for storing results
+                # print('layerDataPath: ', layerDataPath)
                 self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
+                # print('self.layerDataFiles: ', self.layerDataFiles)
                 layerDataPath = Path(hidden_data_dir) / f"{llm_model_name}_{self.chunk_sz}chunk_trivia_qa_{start}-{end}" # Directory for storing results
+                # print('layerDataPath: ', layerDataPath)
                 self.layerDataFiles.extend(list(Path(layerDataPath).glob("*.pickle")))
+                # print('self.layerDataFiles: ', self.layerDataFiles)
                 layerDataPath = Path(hidden_data_dir) / f"{llm_model_name}_{self.chunk_sz}chunk_place_of_birth_{start}-{end}" # Directory for storing results
+                # print('layerDataPath: ', layerDataPath)
                 self.layerDataFiles.extend(list(Path(layerDataPath).glob("*.pickle")))
+                # print('self.layerDataFiles: ', self.layerDataFiles)
                 layerDataPath = Path(hidden_data_dir) / f"{llm_model_name}_{self.chunk_sz}chunk_founders_{start}-{end}" # Directory for storing results
+                # print('layerDataPath: ', layerDataPath)
                 self.layerDataFiles.extend(list(Path(layerDataPath).glob("*.pickle")))
+                # print('self.layerDataFiles: ', self.layerDataFiles)
             except:
                 print('dataset hidden data not hooked, run all four dataset first')
                 print(traceback.format_exc())
         else:
             print('Invalid dataset')
             return None
+
+        print('data files: ', self.layerDataFiles)
 
         self.cache_model_dir = Path(cache_model_dir) # Cache for huggingface models
 
@@ -560,13 +572,13 @@ class haluClassify():
                     # results['first_attention']
             except Exception as err:
                 print(traceback.format_exc())
-        # print('hidden data')
-        # for k, v in hidden_data.items():
-        #     print(k, len(v))
-        #     try:
-        #         print(v[0].shape)
-        #     except:
-        #         print(v[0])
+        print('hidden data')
+        for k, v in hidden_data.items():
+            print(k, len(v))
+            try:
+                print(v[0].shape)
+            except:
+                print(v[0])
         # use the merged data to train classifier
         # for results_file in tqdm(self.layerDataFiles):
         # merge all chunk for a given hidden data will be used by classifier
