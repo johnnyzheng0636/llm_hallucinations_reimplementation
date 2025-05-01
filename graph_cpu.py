@@ -32,6 +32,12 @@ def main():
     g = visualization.visualization(
         input_dir, 
         only_bar = args.bar_only,
+        llm_model_name=args.model,
+        hidden_data_dir=args.hidden_data_dir,
+        chunk_sz=args.chunk_sz,
+        start=args.start,
+        end=args.end,
+        dataset = args.dataset,
     )
 
     if args.bar_only:

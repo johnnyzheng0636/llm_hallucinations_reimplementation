@@ -26,8 +26,41 @@ class visualization():
             out_dir = "./outouts/",
             alpha = 0.2,
             only_bar = False,
+            llm_model_name='open_llama_7b',
+            hidden_data_dir="./results/",
+            chunk_sz=50, # only used for demo
+            start=0,
+            end=2500,
+            dataset = "capitals",
         ):
-        self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
+        self.hidden_data_dir = hidden_data_dir
+        self.llm_model_name = llm_model_name
+        self.chunk_sz = chunk_sz
+        self.start = start
+        self.end = end
+        self.dataset = dataset
+
+        if self.dataset != 'combined':
+            self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
+        elif self.dataset == 'combined':
+            try:
+                layerDataPath = Path(self.hidden_data_dir) / f"{self.llm_model_name}_{self.chunk_sz}chunk_capitals_{self.start}-{self.end}" # Directory for storing results
+                self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
+                layerDataPath = Path(self.hidden_data_dir) / f"{self.llm_model_name}_{self.chunk_sz}chunk_trivia_qa_{self.start}-{self.end}" # Directory for storing results
+                self.layerDataFiles.extend(list(Path(layerDataPath).glob("*.pickle")))
+                layerDataPath = Path(self.hidden_data_dir) / f"{self.llm_model_name}_{self.chunk_sz}chunk_place_of_birth_{self.start}-{self.end}" # Directory for storing results
+                self.layerDataFiles.extend(list(Path(layerDataPath).glob("*.pickle")))
+                layerDataPath = Path(self.hidden_data_dir) / f"{self.llm_model_name}_{self.chunk_sz}chunk_founders_{self.start}-{self.end}" # Directory for storing results
+                self.layerDataFiles.extend(list(Path(layerDataPath).glob("*.pickle")))
+            except:
+                print('dataset hidden data not hooked, run all four dataset first')
+                print(traceback.format_exc())
+        else:
+            print('Invalid dataset')
+            return None
+
+
+        # self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
         self.model_name = str(layerDataPath).split('/')[-1]
         self.outPath = Path(out_dir) / self.model_name
         self.alpha = alpha
@@ -51,6 +84,7 @@ class visualization():
             first_attribute_entropy_ls = []
             first_logits_entropy_ls = []
             last_logits_entropy_ls = []
+            inhomo_all_logit_entropy_ls = []
             all_logit_entropy_ls = []
             first_logit_ls = []
             last_logit_ls = []
@@ -69,11 +103,12 @@ class visualization():
                     with open(dataChunk[i], "rb") as infile:
                         chunk = pickle.loads(infile.read())
 
+                    inhomo_all_logit_entropy_ls.extend([sp.stats.entropy(sp.special.softmax(i[j-1:], axis=1), axis=1) for i,j in zip(chunk['logits'], chunk['start_pos'])])
+
                     num_layers = chunk['first_fully_connected'][0].shape[0]
                     layer_pos = num_layers-2
                     first_attribute_entropy_ls.append(np.array([sp.stats.entropy(i) for i in chunk['attributes_first']]))
                     first_logits_entropy_ls.append(np.array([sp.stats.entropy(sp.special.softmax(i[j])) for i,j in zip(chunk['logits'], chunk['start_pos'])]))
-                    all_logit_entropy_ls.append(np.array([sp.stats.entropy(sp.special.softmax(i[j-1:], axis=1), axis=1) for i,j in zip(chunk['logits'], chunk['start_pos'])]))
                     last_logits_entropy_ls.append(np.array([sp.stats.entropy(sp.special.softmax(i[-1])) for i in chunk['logits']]))
                     # first_logit_decomp_ls.append(PCA(n_components=2).fit_transform(np.array([i[j] for i,j in zip(chunk['logits'], chunk['start_pos'])])))
                     # last_logit_decomp_ls.append(PCA(n_components=2).fit_transform(np.array([i[-1] for i in chunk['logits']])))
@@ -104,7 +139,26 @@ class visualization():
                 except:
                     print(traceback.format_exc())
 
-            all_logit_entropy_ls = np.concatenate(all_logit_entropy_ls)
+            # padding
+            # for ele in inhomo_all_logit_entropy_ls:
+            #     print(ele.shape)
+            max_shape = np.max([arr.shape for arr in inhomo_all_logit_entropy_ls], axis=0)
+            # print('max_shape: ', max_shape)
+            for ele in inhomo_all_logit_entropy_ls:
+                pad_width = [(0, max_dim - dim) for dim, max_dim in zip(ele.shape, max_shape)]
+                # print(pad_width)
+                padded = np.pad(ele, pad_width, mode='constant', constant_values=0)
+                # print(padded)
+                all_logit_entropy_ls.append(padded)
+            del inhomo_all_logit_entropy_ls
+            all_logit_entropy_arr = np.stack(all_logit_entropy_ls)
+            # print('all_logit_entropy_ls: ', test_inhomo_all_logit_entropy_ls)
+            # print()
+            # print('all_logit_entropy_ls shape: ', test_inhomo_all_logit_entropy_ls.shape)
+            # print()
+            # exit(0)
+
+            # all_logit_entropy_ls = np.concatenate(all_logit_entropy_ls)
             # print('all_logit_entropy_ls.shape: ', all_logit_entropy_ls.shape)
 
             self.curve_data = {
@@ -118,7 +172,7 @@ class visualization():
                 'final_token_layer_activations': np.concatenate(final_token_layer_activations_ls),
                 'first_token_layer_attention': np.concatenate(first_token_layer_attention_ls),
                 'final_token_layer_attention': np.concatenate(final_token_layer_attention_ls),
-                'first_10_softmax_entropy': all_logit_entropy_ls,
+                'first_10_softmax_entropy': all_logit_entropy_arr,
             }
 
             self.scatter_data = {
