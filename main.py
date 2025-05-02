@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 from myutil import trexLoad, hookLayer, haluClassify, baseline
 
@@ -53,6 +54,9 @@ def main():
     # set this flag to run baseline, by default it doesn't run baseline
     parser.add_argument('--run_baseline', action='store_true', help='if True then run the baseline model')
 
+    if len(sys.argv)==1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
 
     args = parser.parse_args()
 

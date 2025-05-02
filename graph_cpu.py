@@ -1,6 +1,7 @@
 from myutil import visualization
 from pathlib import Path
 import argparse
+import sys
 
 # This main perfomre all job can be boosted by GPU
 def main():
@@ -22,6 +23,10 @@ def main():
     parser.add_argument('--bar_only', action='store_true', help='if True then only plot accuracy and ROCAUC curve')
     parser.add_argument('--curve_only', action='store_true', help='if True then only plot entropy curve')
     parser.add_argument('--scatter_only', action='store_true', help='if True then only plot scatter')
+
+    if len(sys.argv)==1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
 
     args = parser.parse_args()
 
