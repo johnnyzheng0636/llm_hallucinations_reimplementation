@@ -23,9 +23,9 @@ If the starting `(hallucination)` is missing, run `conda activate hallucination`
 
 ***Important! Ensure you have at least 400GB of available disk space for artifact hidden layer data to be collect. Depending on model used, you may need 20+ TB of storage available. If no enough space is available, the job will be killed when it used up all space. After allocating more space, you can rerun the same command and it will resume from where it is killed last time.***
 
-To collect data and train the hallucination classifier, run: `python main.py`. To run with GPU on SuperPod run `sbatch test.sbatch`, else if GPU is reachable on `pwd`, you can run `python main.py` directly. 
+To collect data and train the hallucination classifier, run: `python main.py`. To run with GPU on SuperPod run `sbatch test.sbatch`, else if GPU is reachable on `pwd`, you can run `python main.py` directly. Also, you can call the python script in `./` without any parameters to display the help messages.
 
-Notice to use `.sbatch` you just modify the python part with different parameters and switch between `main.py`, `graph.cpu.py`, and `demo.py`. The `main.py` must run on GPU, while `graph.cpu.py` and `demo.py` can run on CPU.
+Notice to use `.sbatch`, you just modify the python part with different parameters and switch between `main.py`, `graph.cpu.py`, and `demo.py`. The `main.py` must run on GPU, while `graph.cpu.py` and `demo.py` can run on CPU.
 
 To avoid the [pull issues](#git-pull-issue), you can create a new file `local.sbatch`, which is in `.gitignore` already, and modify it as your will.
 

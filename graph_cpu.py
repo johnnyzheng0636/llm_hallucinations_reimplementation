@@ -8,8 +8,11 @@ def main():
     parser = argparse.ArgumentParser()
 
     # use these to consgruct the path
-    parser.add_argument('--model', type=str, default='open_llama_7b', help='model to load; for example `open_llama_7b`.')
-    parser.add_argument('--dataset', type=str, default='capitals', help='dataset to load; for example `triviaqa.`')
+    parser.add_argument('--model', type=str, default='open_llama_7b', help='model to load; for example `open_llama_7b`. Available: ' \
+        '`falcon-40b`, `falcon-7b`, `open_llama_13b`, `open_llama_7b`, `Llama-3.1-8B`, `Llama-3.2-3B`, `Llama-3.2-1B`, `gemma-3-4b-it`, `opt-6.7b`, `opt-30b`.\n' \
+        'Notice Large model above 13B is no tested due to hardware constraint, it is there just for the sake of completeness of reimplenmentation')
+    parser.add_argument('--dataset', type=str, default='capitals', help='dataset to load; for example `triviaqa`. Available: ' \
+        '`capitals`, `trivia_qa`, `place_of_birth`, `founders`, `combined`.')
     # parser.add_argument('--classifier', type=str, default='mlp', help='classifier for the hallucination')
     # parser.add_argument('--trex_dest', type=str, default='./trex/', help='path to store the t-rex dataset')
     # parser.add_argument('--csv_dest', type=str, default='./data/', help='path to store the csv extracted from t-rex dataset')
