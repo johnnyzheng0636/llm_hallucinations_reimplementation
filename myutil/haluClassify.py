@@ -154,7 +154,7 @@ class haluClassify():
             print('Invalid dataset')
             return None
 
-        print('data files: ', self.layerDataFiles)
+        # print('data files: ', self.layerDataFiles)
 
         self.cache_model_dir = Path(cache_model_dir) # Cache for huggingface models
 
@@ -522,7 +522,7 @@ class haluClassify():
                 # print('classifier demo mode 2: ', self.demo)
                 if self.demo:
                     # select a random sample for demo
-                    print(self.dataset)
+                    # print(self.dataset)
                     if self.dataset == 'combined':
                         dataset_ls = ['trivia_qa', 'place_of_birth', 'founders', 'capitals']
                         dataset_selected = random.choice(dataset_ls)
@@ -530,7 +530,7 @@ class haluClassify():
                         self.layerDataFiles = list(Path(layerDataPath).glob("*.pickle"))
                         self.dataset = dataset_selected
                         
-                    print(self.dataset)
+                    # print(self.dataset)
                     print("Using demo mode")
                     rand_chunk = random.choice(self.layerDataFiles)
                     rand_idx = random.randint(0, self.chunk_sz-1)
@@ -572,13 +572,13 @@ class haluClassify():
                     # results['first_attention']
             except Exception as err:
                 print(traceback.format_exc())
-        print('hidden data')
-        for k, v in hidden_data.items():
-            print(k, len(v))
-            try:
-                print(v[0].shape)
-            except:
-                print(v[0])
+        # print('hidden data')
+        # for k, v in hidden_data.items():
+        #     print(k, len(v))
+        #     try:
+        #         print(v[0].shape)
+        #     except:
+        #         print(v[0])
         # use the merged data to train classifier
         # for results_file in tqdm(self.layerDataFiles):
         # merge all chunk for a given hidden data will be used by classifier
